@@ -260,14 +260,17 @@ EOF
 
 pause
 echo
-say "Add your lenses one by one. Just press Enter on empty Lens name when you're done."
+say "Now you'll define your lenses one by one. After each, you'll be asked 'Add another?' — answer N to finish."
 
 LENSES_MD=""
 LENS_NUM=1
 while true; do
     echo
-    LENS_NAME=$(ask "Lens #$LENS_NUM name (or empty to finish)")
-    [ -z "$LENS_NAME" ] && break
+    LENS_NAME=$(ask "Lens #$LENS_NUM name")
+    if [ -z "$LENS_NAME" ]; then
+        warn "Lens name can't be empty. Type a short name or Ctrl+C to abort."
+        continue
+    fi
     echo
     note "Now describe lens '$LENS_NAME': your goal, active questions, what's signal vs noise."
     LENS_DESC=$(ask_multiline "Description")
@@ -279,8 +282,20 @@ while true; do
 
 $LENS_DESC
 "
+    ok "Lens #$LENS_NUM '$LENS_NAME' saved."
+
     LENS_NUM=$((LENS_NUM + 1))
-    [ $LENS_NUM -gt 5 ] && { warn "Reached maximum of 5 lenses."; break; }
+    if [ $LENS_NUM -gt 5 ]; then
+        warn "Reached maximum of 5 lenses."
+        break
+    fi
+
+    echo
+    ADD_MORE=$(ask "Add another lens? [y/N]" "N")
+    case "$ADD_MORE" in
+        [Yy]|[Yy][Ee][Ss]) continue ;;
+        *) break ;;
+    esac
 done
 
 if [ -z "$LENSES_MD" ]; then
