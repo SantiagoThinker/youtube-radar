@@ -11,7 +11,7 @@ Built as a [Claude Code routine](https://code.claude.com/docs/en/routines) that 
 For each new video on monitored channels, you receive a Telegram message like:
 
 ```
-🎬 @SomeChannel · Russian-translation-of-title-here
+🎬 @SomeChannel · Title of the video
 
 🧩 Root tensions:
 • Tension 1 in 6-12 words

@@ -18,7 +18,7 @@
 #   bash scripts/utils.sh build_base "20260505" "@handle" "Title" "videoId"
 
 slug() {
-    # $1 = title (raw, may contain Russian / punctuation / Unicode)
+    # $1 = title (raw, may contain non-ASCII / punctuation / Unicode)
     # → ASCII-only, lowercase, dash-separated, max 60 chars
     local s="$1"
     s=$(echo "$s" | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null | tr '[:upper:]' '[:lower:]')
