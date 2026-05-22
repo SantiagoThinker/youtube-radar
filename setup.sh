@@ -72,12 +72,17 @@ ask_secret() {
 }
 
 ask_multiline() {
-    # $1 = prompt. Reads until empty line.
+    # $1 = prompt. Reads until line containing exactly "END" (sentinel).
+    # Why a sentinel instead of empty-line: pasted multi-paragraph content
+    # often has internal blank lines, which would prematurely end input.
     local prompt="$1"
     local result=""
-    printf "${color_bold}%s${color_reset} ${color_dim}(empty line to finish)${color_reset}:\n" "$prompt"
+    printf "${color_bold}%s${color_reset}\n" "$prompt"
+    printf "${color_dim}Type or paste your text below. When you're done, type ${color_reset}${color_bold}END${color_reset}${color_dim} on its own line and press Enter.${color_reset}\n"
+    printf "${color_dim}(blank lines inside your text are fine — they won't end input)${color_reset}\n"
+    echo
     while IFS= read -r line; do
-        [ -z "$line" ] && break
+        [ "$line" = "END" ] && break
         result+="$line"$'\n'
     done
     echo "$result"
