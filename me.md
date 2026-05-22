@@ -35,9 +35,6 @@ than general.]
 Direct, structured delivery. Honest probabilistic estimates. Skip basics —
 surface non-obvious and contested points only.
 
-_(Adjust this section if you prefer a different tone — terse vs detailed,
-academic vs operator, etc.)_
-
 ---
 
 ## Lenses
@@ -112,6 +109,3 @@ When in doubt — skip the bullet, don't stretch.
 ## Output language
 
 `en`
-
-_(Change to `ru` or other code if you want different output language. Tested
-with `en` and `ru`. Affects all wiki, recommendations, and Telegram messages.)_
