@@ -124,7 +124,13 @@ cat <<EOF
   and where to paste it (claude.ai env-vars UI). They never touch this
   script, your shell history, or disk.
 
-  Press Ctrl+C any time to abort and restart.
+  Two things to know before starting:
+
+    📝 For multi-line questions (paragraphs, lists), type the word END
+       on its own line when you're done — Enter alone won't submit.
+       A yellow box will remind you each time.
+
+    🛑 Press Ctrl+C any time to abort and restart from scratch.
 
 EOF
 
