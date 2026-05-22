@@ -1,16 +1,16 @@
 #!/bin/bash
 # setup.sh — interactive setup wizard for youtube-radar.
 #
-# Collects: profile, lenses, channels, Telegram bot, GitHub PAT, Anthropic auth.
-# Outputs:
-#   - me.md (from template) — committed to git
-#   - channels.yaml — committed to git
-#   - seen.json — committed to git
+# Collects: profile, lenses, channels.
+# Outputs (in repo, committed to git):
+#   - me.md
+#   - channels.yaml
+#   - seen.json
 #
-# Secrets policy: NEVER written to disk, NEVER committed. At the end of the
-# wizard they're printed on screen in a copy-paste block for the user to
-# transfer into claude.ai routine env-vars UI. After user confirms copy,
-# the terminal scrollback is wiped via printf '\033c' + clear.
+# Secrets policy: the wizard NEVER touches secrets. They flow directly from
+# their source (BotFather, GitHub, Anthropic) → your clipboard → claude.ai
+# routine env-vars UI. No file, no terminal echo, no shell history risk.
+# Final summary shows exactly where to get each secret and where to paste it.
 
 set -e
 
@@ -60,16 +60,6 @@ ask() {
     echo "${result:-$default}"
 }
 
-ask_secret() {
-    # $1 = prompt. Reads without echoing.
-    local prompt="$1"
-    local result
-    printf "${color_bold}%s${color_reset} ${color_dim}(hidden)${color_reset}: " "$prompt"
-    read -rs result
-    echo  # newline after hidden input
-    echo "$result"
-}
-
 ask_multiline() {
     # $1 = prompt. Reads until line containing exactly "END" (sentinel).
     # Why a sentinel instead of empty-line: pasted multi-paragraph content
@@ -117,18 +107,16 @@ cat <<EOF
 
   How it works:
 
-  This wizard runs 5 steps (~10 min total):
+  This wizard generates 3 config files (~7 min):
     Step 1 — Who you are (so AI tailors content to YOU)
     Step 2 — Your focus areas (so AI knows what to look for)
     Step 3 — Which channels to watch
-    Step 4 — Three quick auth keys (Telegram, GitHub, Anthropic)
-    Step 5 — Save your answers to files (no more questions)
+    Step 4 — Save your answers to files (no more questions)
 
-  Secrets are NEVER written to disk and NEVER committed to git.
-  They're printed on screen at the end so you can copy them straight
-  into the claude.ai routine UI. The terminal output gets cleared after.
-
-  Profile + channels go in the repo so the cloud routine can read them.
+  Secrets (Telegram / GitHub / Anthropic tokens) are NEVER collected by
+  this wizard. The final summary shows exactly where to get each one
+  and where to paste it (claude.ai env-vars UI). They never touch this
+  script, your shell history, or disk.
 
   Press Ctrl+C any time to abort and restart.
 
@@ -142,7 +130,7 @@ clear
 cat <<EOF
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 1 of 5 — Tell us about you            (~2 minutes)            │
+  │  Step 1 of 4 — Tell us about you            (~2 minutes)            │
   └─────────────────────────────────────────────────────────────────────┘
 
   Why this matters:
@@ -195,7 +183,7 @@ clear
 cat <<EOF
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 2 of 5 — Define your lenses           (~3 minutes)            │
+  │  Step 2 of 4 — Define your lenses           (~3 minutes)            │
   └─────────────────────────────────────────────────────────────────────┘
 
   Why lenses:
@@ -325,7 +313,7 @@ clear
 cat <<EOF
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 3 of 5 — Choose channels              (~3 minutes)            │
+  │  Step 3 of 4 — Choose channels              (~2 minutes)            │
   └─────────────────────────────────────────────────────────────────────┘
 
   Why channels matter:
@@ -405,144 +393,18 @@ fi
 
 clear
 
-# ─── Step 4: secrets ─────────────────────────────────────────────────────────
+# ─── Step 4: write files ─────────────────────────────────────────────────────
 
 cat <<EOF
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 4 of 5 — Auth keys (the boring part)  (~3 minutes)            │
-  └─────────────────────────────────────────────────────────────────────┘
-
-  Why we need these:
-
-    The system runs in the cloud (Anthropic's infrastructure). To work
-    on your behalf, it needs three keys:
-
-      1) Telegram bot token — to send you the daily digest
-      2) GitHub Personal Access Token — to commit results back to your repo
-      3) Anthropic API key OR OAuth token — pays for Claude AI calls
-
-    These are NEVER saved to disk and NEVER committed to git. At the
-    end of the wizard, all three will be printed on screen in a clear
-    copy-paste block. You'll copy them straight into the claude.ai
-    routine env-vars UI, then the terminal is cleared.
-
-    The claude.ai routine env-vars UI is the single place where these
-    secrets live in the cloud.
-
-  If you DON'T have these keys yet, abort now (Ctrl+C) and follow
-  QUICKSTART.md sections:
-    • "Telegram bot setup"
-    • "GitHub token setup"
-    • "Anthropic auth"
-  Then come back and re-run setup.sh.
-
-  Have them ready? Continue.
-
-EOF
-
-pause
-echo
-
-# ─── 4.1 Telegram ─────
-cat <<EOF
-  ▸ Telegram bot token
-
-    Where to get it:
-      1. Open Telegram → search for @BotFather
-      2. Send /newbot → give it any name and a unique handle
-      3. @BotFather replies with a token like 1234567890:AAH_xxxx...
-      4. Find your new bot in Telegram and send /start to activate it
-
-    Why we need it: this is what sends you the daily digest message.
-
-EOF
-TELEGRAM_BOT_TOKEN=$(ask_secret "Paste TELEGRAM_BOT_TOKEN")
-
-echo
-cat <<EOF
-  ▸ Telegram chat ID
-
-    Where to get it:
-      1. In Telegram, search for @userinfobot
-      2. Send /start to it
-      3. It replies with your numeric ID (8-10 digits)
-
-    Why we need it: tells the bot WHICH user to send messages to. This
-    is NOT a secret — your bot only sends to this ID, no one else's.
-
-EOF
-TELEGRAM_CHAT_ID=$(ask "Paste TELEGRAM_CHAT_ID")
-
-echo
-# ─── 4.2 GitHub PAT ─────
-cat <<EOF
-  ▸ GitHub Personal Access Token (PAT)
-
-    Where to get it:
-      1. Visit https://github.com/settings/tokens?type=beta
-      2. "Generate new token (fine-grained)"
-      3. Token name: youtube-radar-routine
-      4. Expiration: 90 days (set a reminder to rotate)
-      5. Repository access: Only select repositories → pick this repo
-      6. Repository permissions:
-           • Contents → Read and write
-           • Pull requests → Read and write
-           • Everything else → No access
-      7. Generate token, copy (shown once)
-
-    Why we need it: cloud routine pushes wiki/recommendations back to
-    your repo. We use fine-grained scope so the token can ONLY touch
-    this one repo, nothing else in your account.
-
-EOF
-GH_TOKEN=$(ask_secret "Paste GH_TOKEN")
-
-echo
-# ─── 4.3 Anthropic ─────
-cat <<EOF
-  ▸ Anthropic auth — pick one
-
-    Two ways to pay for Claude AI calls:
-
-    [A] API key — pay-as-you-go from your Anthropic API balance
-        Get it: https://console.anthropic.com/settings/keys → Create Key
-        Cost: ~\$3-5 per run of 5 videos at Sonnet prices
-        Best if: you want predictable per-call billing
-
-    [B] OAuth setup-token — uses your claude.ai subscription quota
-        Get it: open terminal, run 'claude setup-token', browser opens,
-                authorize, copy the sk-ant-oat-... token shown
-        Cost: counts against your claude.ai subscription
-        Best if: you already pay for claude.ai and have quota to spare
-
-EOF
-ANTHROPIC_CHOICE=$(ask "Choose [A/B]" "A")
-
-if [[ "$ANTHROPIC_CHOICE" =~ ^[Aa]$ ]]; then
-    echo
-    ANTHROPIC_API_KEY=$(ask_secret "Paste ANTHROPIC_API_KEY (sk-ant-api03-...)")
-    ANTHROPIC_TOKEN=""
-else
-    echo
-    ANTHROPIC_TOKEN=$(ask_secret "Paste ANTHROPIC_TOKEN (sk-ant-oat-...)")
-    ANTHROPIC_API_KEY=""
-fi
-
-clear
-
-# ─── Step 5: write files ─────────────────────────────────────────────────────
-
-cat <<EOF
-
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 5 of 5 — Saving your answers          (~30 seconds)           │
+  │  Step 4 of 4 — Saving your answers          (~30 seconds)           │
   └─────────────────────────────────────────────────────────────────────┘
 
   What this step is:
 
     Just the wizard finishing up. No more questions. Everything you
-    entered in Steps 1-4 gets saved to the right files so the cloud
+    entered in Steps 1-3 gets saved to the right files so the cloud
     routine can read them later.
 
   What gets created on disk:
@@ -560,11 +422,11 @@ cat <<EOF
        Tracking file (initially empty for each channel). Gets filled
        automatically as videos are processed.
 
-  What gets shown on screen (then cleared):
+  Reminder:
 
-    🔒 Your three auth keys, formatted for copy-paste into claude.ai
-       env-vars UI. Nothing saved to disk. After you confirm you've
-       copied them, the terminal is wiped clean.
+    No secrets get written. Auth keys (Telegram / GitHub / Anthropic)
+    are handled directly via claude.ai env-vars UI — instructions for
+    where to get each one are shown in the final summary, coming next.
 
   Press Enter to continue.
 
@@ -595,60 +457,6 @@ ok "me.md          → $ME_TARGET"
 ok "channels.yaml  → $CHANNELS_TARGET"
 ok "seen.json      → $REPO_DIR/seen.json"
 
-# ─── Display secrets on screen (NOT saved to disk) ───────────────────────────
-
-echo
-echo
-cat <<EOF
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │  🔒 SECRETS — COPY NOW                                              │
-  │                                                                     │
-  │  Below are your three auth keys formatted for claude.ai env-vars.   │
-  │  These are NOT saved to disk and NOT committed to git.              │
-  │                                                                     │
-  │  ACTION:                                                            │
-  │   1. Open in another window: https://claude.ai/code                 │
-  │   2. Select / create environment 'youtube-radar'                    │
-  │   3. Open Environment Variables                                     │
-  │   4. Copy each line below into the env-vars field                   │
-  │   5. Save the environment                                           │
-  │   6. Come back here and press Enter — terminal will be wiped        │
-  │                                                                     │
-  └─────────────────────────────────────────────────────────────────────┘
-
-EOF
-
-cat <<EOF
-TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
-TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
-GH_TOKEN=$GH_TOKEN
-EOF
-
-if [ -n "$ANTHROPIC_API_KEY" ]; then
-    echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
-fi
-if [ -n "$ANTHROPIC_TOKEN" ]; then
-    echo "ANTHROPIC_TOKEN=$ANTHROPIC_TOKEN"
-fi
-
-echo
-echo
-printf "${color_bold}Have you copied all values into claude.ai env-vars?${color_reset}\n"
-printf "${color_dim}(type 'yes' to clear terminal, anything else to keep visible)${color_reset}: "
-read -r COPY_CONFIRM
-
-# Clear secrets from terminal scrollback
-if [[ "$COPY_CONFIRM" =~ ^[Yy]([Ee][Ss])?$ ]]; then
-    # printf "\033c" — reset terminal including scrollback in most modern terminals
-    # clear — fallback for terminals that don't honor the reset escape
-    printf "\033c"
-    clear
-    ok "Terminal scrollback wiped."
-else
-    warn "Terminal NOT cleared. Your secrets are still visible above."
-    warn "Recommend clearing manually before sharing screen / closing terminal."
-fi
-
 # ─── Final instructions ──────────────────────────────────────────────────────
 
 cat <<EOF
@@ -658,48 +466,144 @@ cat <<EOF
   │  Setup complete ✓                                                   │
   └─────────────────────────────────────────────────────────────────────┘
 
-  What you have now (in this folder):
+  Wizard generated 3 config files. Now finish cloud setup (~10 min).
 
-    ✓ me.md with your profile and lenses
-    ✓ channels.yaml with your channels
-    ✓ seen.json tracking file
+  Six steps below. Each one tells you exactly where to go and what to do.
 
-  Secrets:
+  ───────────────────────────────────────────────────────────────────────
 
-    ✓ Copied (hopefully!) into claude.ai env-vars
-    ✓ Not on disk anywhere — wizard never wrote them down
+  ❶ Review and edit me.md (optional but recommended)
 
-  What still needs to happen (~5 min):
+       cat me.md          # or open in your editor
 
-    1. Review me.md — does it capture your context accurately?
-       (cat me.md or open in any editor)
+     Does it capture your role / lenses / stop-list accurately? Tweak
+     before committing — me.md is the AI's main input.
 
-    2. Push to GitHub:
+  ───────────────────────────────────────────────────────────────────────
 
-         git add me.md channels.yaml seen.json
-         git commit -m "initial config from setup wizard"
-         gh repo create youtube-radar --private --source=. --remote=origin
-         git push -u origin main
+  ❷ Push the config to GitHub
 
-    3. Install Claude GitHub App on your new repo:
-         open https://github.com/apps/claude
-       → Install → Only select repositories → youtube-radar
+       git add me.md channels.yaml seen.json
+       git commit -m "initial config from setup wizard"
 
-    4. Finish cloud Environment setup on claude.ai/code:
-       Follow .claude/setup-routine.md, Part 1
-       (You've already done env-vars — also configure Network access
-        and Setup script from that doc.)
+     If this folder is not yet a GitHub repo:
+       gh repo create youtube-radar --private --source=. --remote=origin
+       git push -u origin main
 
-    5. Create Routine on claude.ai/code/routines:
-       Follow .claude/setup-routine.md, Part 2
+     If it already is:
+       git push
 
-    6. From the routine page click "Run now".
-       First digest in ~15-20 minutes.
+  ───────────────────────────────────────────────────────────────────────
 
-  Full walkthrough: QUICKSTART.md
+  ❸ Install Claude GitHub App on your repo
 
-  Lost a secret? Re-run ./setup.sh — secrets are NEVER stored on disk,
-  so re-entering them is the only way. You can change anything else
-  by editing me.md / channels.yaml directly.
+     Open: https://github.com/apps/claude
+     → Install → Only select repositories → youtube-radar
+
+     Why: cloud routine needs to clone your repo and push results back.
+
+  ───────────────────────────────────────────────────────────────────────
+
+  ❹ Get your three secrets
+
+     You'll paste these into the claude.ai env-vars UI in Step ❺.
+     KEEP THEM in your password manager — never in repo, never in chat.
+
+     ─── A) Telegram bot token ───
+       1. Open Telegram, search @BotFather
+       2. Send /newbot → name your bot
+       3. Copy the token like 1234567890:AAH_xxxx
+       4. Find your bot in Telegram, send /start to activate
+
+     ─── B) Telegram chat ID ───
+       1. In Telegram, search @userinfobot
+       2. Send /start
+       3. Copy the numeric ID (8-10 digits)
+
+     ─── C) GitHub fine-grained PAT ───
+       1. Open https://github.com/settings/tokens?type=beta
+       2. Generate new token (fine-grained)
+       3. Name: youtube-radar-routine, expiration: 90 days
+       4. Repository access: Only select repositories → your repo
+       5. Permissions:
+            - Contents → Read and write
+            - Pull requests → Read and write
+            - everything else → No access
+       6. Generate, copy (shown once)
+
+     ─── D) Anthropic auth — pick one ───
+       [Option A] API key (predictable per-call cost):
+          Open https://console.anthropic.com/settings/keys → Create Key
+          Copy the sk-ant-api03-... value
+       [Option B] OAuth setup-token (uses claude.ai subscription quota):
+          In terminal: claude setup-token
+          Authorize in browser, copy the sk-ant-oat-... shown
+
+  ───────────────────────────────────────────────────────────────────────
+
+  ❺ Create cloud Environment on claude.ai/code
+
+     Open: https://claude.ai/code
+
+     Follow .claude/setup-routine.md, Part 1 (full walkthrough). Quick
+     summary:
+
+     1. Click environment selector → Add environment
+     2. Name: youtube-radar
+     3. Network access: Custom → check default list →
+        add to Allowed domains:
+          api.telegram.org
+          youtube.com
+          www.youtube.com
+          m.youtube.com
+          googlevideo.com
+          *.googlevideo.com
+          ytimg.com
+          *.ytimg.com
+          youtu.be
+     4. Environment variables (paste your secrets from Step ❹):
+          TELEGRAM_BOT_TOKEN=<from A>
+          TELEGRAM_CHAT_ID=<from B>
+          GH_TOKEN=<from C>
+          ANTHROPIC_API_KEY=<from D, option A>
+          OR
+          ANTHROPIC_TOKEN=<from D, option B>
+     5. Setup script (Bash):
+          #!/bin/bash
+          set -e
+          pip install yt-dlp
+          sed -i.bak '/ppa\\.launchpadcontent\\.net/s/^deb /# deb_disabled /' /etc/apt/sources.list.d/*.list 2>/dev/null || true
+          apt-get update || true
+          apt-get install -y gh
+     6. Save
+
+  ───────────────────────────────────────────────────────────────────────
+
+  ❻ Create the Routine on claude.ai/code/routines
+
+     Open: https://claude.ai/code/routines → New routine
+
+     Follow .claude/setup-routine.md, Part 2. Key fields:
+     - Name: youtube-radar-digest
+     - Instructions: thin wrapper (paste from setup-routine.md Step 5)
+     - Repositories: pick your youtube-radar repo
+     - Environment: pick youtube-radar (from Step ❺)
+     - Trigger: Schedule → 0 6 * * * (or your preferred cron)
+     - Permissions tab: enable "Allow unrestricted branch pushes"
+
+     Click Create. Then on the routine page → "Run now".
+
+     First digest in ~15-20 minutes.
+
+  ───────────────────────────────────────────────────────────────────────
+
+  Lost or want to change anything in me.md / channels.yaml?
+    Edit the files directly — they're just text. Or re-run ./setup.sh.
+
+  Need more detail on any step?
+    QUICKSTART.md            — full walkthrough
+    .claude/setup-routine.md — claude.ai UI step-by-step
+    CONFIGURATION.md         — every knob explained
+    ARCHITECTURE.md          — how it works under the hood
 
 EOF
