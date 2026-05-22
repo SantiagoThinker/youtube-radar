@@ -6,10 +6,11 @@
 #   - me.md (from template) — committed to git
 #   - channels.yaml — committed to git
 #   - seen.json — committed to git
-#   - ~/.config/youtube-radar/secrets.env — NOT committed (mode 600)
 #
-# Secrets are never written into the repo. The wizard prints the secrets.env
-# path at the end so you can copy values into claude.ai routine UI.
+# Secrets policy: NEVER written to disk, NEVER committed. At the end of the
+# wizard they're printed on screen in a copy-paste block for the user to
+# transfer into claude.ai routine env-vars UI. After user confirms copy,
+# the terminal scrollback is wiped via printf '\033c' + clear.
 
 set -e
 
