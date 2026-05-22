@@ -54,14 +54,14 @@ You have two paths. Choose one:
 - **Path 1** — Edit files in GitHub web editor (no install needed) — **5-10 min**
 - **Path 2** — Clone + run `./setup.sh` interactive wizard locally — **7 min**
 
-Both paths produce the same end state: a `me.md`, `channels.yaml`, and `seen.json`
+Both paths produce the same end state: a [`me.md`](me.md), [`channels.yaml`](channels.yaml), and [`seen.json`](seen.json)
 in your repo that the cloud routine will read.
 
 ## Path 1 — GitHub web (recommended, no install)
 
 ### B1.1 — Open me.md in your repo's web editor
 
-Click `me.md` in the file list → click the pencil ✏️ icon → web editor opens.
+Click [`me.md`](me.md) in the file list → click the pencil ✏️ icon → web editor opens.
 
 The file has clearly-marked `[PLACEHOLDER]` sections with inline examples
 showing what good content looks like.
@@ -99,7 +99,7 @@ Commit channels.yaml.
 
 ### B1.5 — Optional: trim seen.json
 
-`seen.json` should have a key for every channel in `channels.yaml`. If you
+[`seen.json`](seen.json) should have a key for every channel in [`channels.yaml`](channels.yaml). If you
 added new channels in B1.4, also add their keys here as empty arrays:
 
 ```json
@@ -127,7 +127,7 @@ The wizard walks 4 steps:
 3. Channels (paste handles, one per line)
 4. Save to disk
 
-It generates `me.md`, `channels.yaml`, and updates `seen.json`. Then:
+It generates [`me.md`](me.md), [`channels.yaml`](channels.yaml), and updates [`seen.json`](seen.json). Then:
 
 ```bash
 git add me.md channels.yaml seen.json
@@ -414,8 +414,8 @@ processed count, error count, token cost, current backlog. Open it any
 time to check health.
 
 **Adjusting later**:
-- Edit `me.md` to change profile or lenses (commit + push, next run picks up)
-- Edit `channels.yaml` to add/mute channels
+- Edit [`me.md`](me.md) to change profile or lenses (commit + push, next run picks up)
+- Edit [`channels.yaml`](channels.yaml) to add/mute channels
 - All edits via GitHub web are fine — the routine reads from your repo
   on every run
 
