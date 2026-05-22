@@ -48,13 +48,15 @@ note() {
 
 ask() {
     # $1 = prompt, $2 = optional default
+    # CRITICAL: all prompt output goes to stderr (>&2) so it doesn't get
+    # captured by command substitution $(...). Only the answer goes to stdout.
     local prompt="$1"
     local default="${2:-}"
     local result
     if [ -n "$default" ]; then
-        printf "${color_bold}%s${color_reset} ${color_dim}[%s]${color_reset}: " "$prompt" "$default"
+        printf "${color_bold}%s${color_reset} ${color_dim}[%s]${color_reset}: " "$prompt" "$default" >&2
     else
-        printf "${color_bold}%s${color_reset}: " "$prompt"
+        printf "${color_bold}%s${color_reset}: " "$prompt" >&2
     fi
     read -r result
     echo "${result:-$default}"
@@ -64,16 +66,19 @@ ask_multiline() {
     # $1 = prompt. Reads until line containing exactly "END" (case-insensitive).
     # Why a sentinel instead of empty-line: pasted multi-paragraph content
     # often has internal blank lines, which would prematurely end input.
+    # CRITICAL: prompt + help box go to stderr (>&2), only $result to stdout.
     local prompt="$1"
     local result=""
     local line_upper
-    printf "\n${color_bold}%s${color_reset}\n" "$prompt"
-    printf "${color_yellow}┌─────────────────────────────────────────────────────────────────────┐${color_reset}\n"
-    printf "${color_yellow}│${color_reset}  ${color_bold}How to finish:${color_reset} type ${color_bold}END${color_reset} on its own line, then press Enter.        ${color_yellow}│${color_reset}\n"
-    printf "${color_yellow}│${color_reset}  Case-insensitive — 'end', 'END', 'End' all work.                  ${color_yellow}│${color_reset}\n"
-    printf "${color_yellow}│${color_reset}  Blank lines inside your text are fine — they don't end input.     ${color_yellow}│${color_reset}\n"
-    printf "${color_yellow}└─────────────────────────────────────────────────────────────────────┘${color_reset}\n"
-    echo
+    {
+        printf "\n${color_bold}%s${color_reset}\n" "$prompt"
+        printf "${color_yellow}┌─────────────────────────────────────────────────────────────────────┐${color_reset}\n"
+        printf "${color_yellow}│${color_reset}  ${color_bold}How to finish:${color_reset} type ${color_bold}END${color_reset} on its own line, then press Enter.        ${color_yellow}│${color_reset}\n"
+        printf "${color_yellow}│${color_reset}  Case-insensitive — 'end', 'END', 'End' all work.                  ${color_yellow}│${color_reset}\n"
+        printf "${color_yellow}│${color_reset}  Blank lines inside your text are fine — they don't end input.     ${color_yellow}│${color_reset}\n"
+        printf "${color_yellow}└─────────────────────────────────────────────────────────────────────┘${color_reset}\n"
+        echo
+    } >&2
     while IFS= read -r line; do
         # Case-insensitive END check (works in bash 3.2 on Mac)
         line_upper=$(echo "$line" | tr '[:lower:]' '[:upper:]')
@@ -470,23 +475,25 @@ EOF
 
 pause
 
-# Build me.md from template
-sed \
-    -e "s|{{NAME}}|$NAME|g" \
-    -e "s|{{BACKGROUND_PARAGRAPH}}|$BACKGROUND|g" \
-    "$ME_TEMPLATE" > "$ME_TARGET.tmp"
-
-python3 - <<PYEOF
-import re
+# Build me.md from template using Python (sed breaks on multi-line replacements).
+# Pass everything via environment vars to avoid shell-escaping nightmares.
+NAME="$NAME" \
+BACKGROUND="$BACKGROUND" \
+LENSES_MD="$LENSES_MD" \
+STOPLIST="$STOPLIST" \
+ME_TEMPLATE="$ME_TEMPLATE" \
+ME_TARGET="$ME_TARGET" \
+python3 - <<'PYEOF'
+import os
 from pathlib import Path
 
-content = Path("$ME_TARGET.tmp").read_text()
-content = content.replace("{{LENSES}}", """$LENSES_MD""")
-content = content.replace("{{STOPLIST}}", """$STOPLIST""")
-Path("$ME_TARGET").write_text(content)
+content = Path(os.environ["ME_TEMPLATE"]).read_text()
+content = content.replace("{{NAME}}", os.environ.get("NAME", ""))
+content = content.replace("{{BACKGROUND_PARAGRAPH}}", os.environ.get("BACKGROUND", "").rstrip())
+content = content.replace("{{LENSES}}", os.environ.get("LENSES_MD", "").rstrip())
+content = content.replace("{{STOPLIST}}", os.environ.get("STOPLIST", "").rstrip())
+Path(os.environ["ME_TARGET"]).write_text(content)
 PYEOF
-
-rm -f "$ME_TARGET.tmp"
 
 echo
 ok "me.md          → $ME_TARGET"
