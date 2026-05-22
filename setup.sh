@@ -3,9 +3,10 @@
 #
 # Collects: profile, lenses, channels, Telegram bot, GitHub PAT, Anthropic auth.
 # Outputs:
-#   - me.md (from template)
-#   - channels.yaml (with user's channels + priority)
-#   - ~/.config/youtube-radar/secrets.env (mode 600, NOT committed)
+#   - me.md (from template) — committed to git
+#   - channels.yaml — committed to git
+#   - seen.json — committed to git
+#   - ~/.config/youtube-radar/secrets.env — NOT committed (mode 600)
 #
 # Secrets are never written into the repo. The wizard prints the secrets.env
 # path at the end so you can copy values into claude.ai routine UI.
@@ -27,10 +28,11 @@ color_dim="\033[2m"
 color_red="\033[31m"
 color_green="\033[32m"
 color_blue="\033[34m"
+color_yellow="\033[33m"
 color_reset="\033[0m"
 
 say() {
-    printf "${color_blue}▶${color_reset} %s\n" "$1"
+    printf "${color_blue}▶${color_reset} ${color_bold}%s${color_reset}\n" "$1"
 }
 
 ok() {
@@ -38,7 +40,11 @@ ok() {
 }
 
 warn() {
-    printf "${color_red}⚠${color_reset} %s\n" "$1"
+    printf "${color_yellow}⚠${color_reset} %s\n" "$1"
+}
+
+note() {
+    printf "${color_dim}%s${color_reset}\n" "$1"
 }
 
 ask() {
@@ -77,107 +83,282 @@ ask_multiline() {
     echo "$result"
 }
 
+pause() {
+    printf "${color_dim}Press Enter to continue...${color_reset}"
+    read -r
+}
+
 # ─── Header ──────────────────────────────────────────────────────────────────
 
 clear
 cat <<EOF
-┌─────────────────────────────────────────────────────────────────────┐
-│                                                                     │
-│   youtube-radar setup wizard                                        │
-│                                                                     │
-│   This collects your profile, lenses, channels, and secrets.        │
-│   Secrets go to ~/.config/youtube-radar/secrets.env (mode 600).     │
-│   Repo files: me.md, channels.yaml (no secrets in either).          │
-│                                                                     │
-│   Press Ctrl+C any time to abort and start over.                    │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                                                                     │
+  │   youtube-radar — your personal AI video assistant                  │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  What you're setting up:
+
+  A daily digest of YouTube content filtered specifically for YOU.
+  Instead of spending hours watching hour-long interviews to find the
+  3 minutes worth your time, you get a Telegram message every morning
+  with:
+
+    • Root tensions discussed in each video
+    • The most contrarian / non-obvious idea
+    • Bullets specifically relevant to YOUR focus areas
+    • An honest "skip" when the video has nothing for you
+
+  How it works:
+
+  This wizard asks 5 questions (~10 min total):
+    Step 1 — Who you are (so AI tailors content to YOU)
+    Step 2 — Your focus areas (so AI knows what to look for)
+    Step 3 — Which channels to watch
+    Step 4 — Three quick auth keys (Telegram, GitHub, Anthropic)
+    Step 5 — Write everything to disk
+
+  Secrets stay LOCAL ($SECRETS_FILE).
+  Profile + channels go in the repo so the cloud routine can read them.
+
+  Press Ctrl+C any time to abort and restart.
 
 EOF
+
+pause
+clear
 
 # ─── Step 1: profile ─────────────────────────────────────────────────────────
 
-say "Step 1 of 5 — Your profile"
-echo
+cat <<EOF
 
-NAME=$(ask "Your name (used in me.md)")
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 1 of 5 — Tell us about you            (~2 minutes)            │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Why this matters:
+
+    The AI watching YouTube on your behalf has no idea who you are.
+    Without context, it gives generic "this video is interesting"
+    summaries. Boring. Useless.
+
+    With context, it asks "would THIS PERSON find THIS video useful?" —
+    and produces sharply targeted recommendations.
+
+  Two questions coming up:
+
+    1) Your first name
+       Just used to personalize prompts. No surveillance.
+
+    2) A short background paragraph
+       3-5 sentences. Who are you professionally, what are you building,
+       what's important RIGHT NOW. The AI uses this to filter relevance.
+
+       Example of a useful background:
+
+         "I'm a Product Manager at a B2B SaaS company (~500 employees).
+          We're rolling out AI features and I'm evaluating whether to
+          leave for a Head-of-Product role at an early-stage AI-first
+          startup. Right now I'm tracking: how AI-first orgs structure
+          PM work, what enterprise AI buyers actually pay for, and where
+          AgentOps tooling is heading."
+
+       That's specific enough for the AI to decide what's relevant. A
+       background like "I work in tech" is too vague to be useful.
+
+EOF
+
+NAME=$(ask "Your first name")
 echo
-echo "Background paragraph: 3-5 sentences about your role, company, what you build."
-echo "Synthesizer uses this to filter relevance."
-BACKGROUND=$(ask_multiline "Paste paragraph(s) — empty line when done")
+say "Now your background paragraph (3-5 sentences):"
+echo
+BACKGROUND=$(ask_multiline "Paste your background, empty line when done")
+
+if [ -z "$BACKGROUND" ]; then
+    warn "Background is empty. The AI will produce generic recommendations."
+    warn "Strongly recommend going back and adding context."
+fi
+
+clear
 
 # ─── Step 2: lenses ──────────────────────────────────────────────────────────
 
-echo
-say "Step 2 of 5 — Lenses"
-echo
 cat <<EOF
-Lenses are focus areas the Synthesizer projects each video through.
-Each lens becomes a section in your daily digest with 2-5 bullets,
-or an honest "no insights here, because <reason>" refusal.
 
-Examples of useful lenses:
-  • Career — "I'm searching for a Head of Product role in AI-first B2B"
-  • Startup — "I'm exploring an AgentOps governance startup"
-  • Tech radar — "I want to track capability shifts in agentic systems"
-  • Investment thesis — "I evaluate Series A AI companies"
-  • Skill — "I'm learning RL fine-tuning"
-  • Industry — "I track competitive moves in fintech"
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 2 of 5 — Define your lenses           (~3 minutes)            │
+  └─────────────────────────────────────────────────────────────────────┘
 
-Define 1-5 lenses. For each: short name + 2-4 sentence description with
-your specific goal, active questions, examples of signal vs noise.
+  Why lenses:
+
+    The same video can be useful for completely different reasons.
+    A CEO interview might be:
+      • Career inspiration (if you're searching for a role)
+      • Investment thesis (if you evaluate that company's space)
+      • Leadership lessons (if you're growing your org)
+      • Market signal (if you track that industry)
+
+    Without lenses, the AI summarizes ALL these angles for every video.
+    You waste time on dimensions you don't care about.
+
+    WITH lenses, the AI produces a separate section per lens. If a video
+    doesn't apply to one of yours, it honestly says "no insights here" —
+    instead of writing fluff bullets you'll skim and forget.
+
+  How to define a good lens:
+
+    Each lens needs:
+      • Short name (becomes section header in the digest)
+      • Description: your specific goal + what counts as signal vs noise
+
+    Examples of FOCUSED lenses (don't copy — make yours specific):
+
+      ▸ Career — "I'm searching for a Head of Product role at AI-first
+        B2B SaaS in EU/US. I care about: revenue-generating agents in
+        core (not just features), owned P&L, meaningful equity, Series
+        B+ traction. Signal = concrete numbers from CEOs, names of
+        companies hiring, contrarian observations about AI-first org
+        structure."
+
+      ▸ Startup thesis — "I'm exploring an AgentOps governance startup
+        for AI agents in enterprise. I care about: real customer pain
+        in agent governance, unit economics, regulatory landscape,
+        competitor moves. Signal = practitioners describing what's
+        broken in production agent systems."
+
+      ▸ Tech radar — "I track capability shifts in agentic systems.
+        Signal = concrete benchmark numbers, new architectural patterns
+        from researchers, production observations from practitioners.
+        NOT signal = AGI timeline predictions, generic capability claims
+        without evidence."
+
+  Bad lens example: "Technology" — too broad, AI will refuse most bullets.
+  Good lens example: "How AI-first product orgs structure their PM teams"
+                     — specific enough that AI knows what to scan for.
+
+  You can have 1-5 lenses. Most people start with 2-3.
 
 EOF
+
+pause
+echo
+say "Add your lenses one by one. Empty name to finish."
 
 LENSES_MD=""
 LENS_NUM=1
 while true; do
     echo
-    LENS_NAME=$(ask "Lens #$LENS_NUM name (empty to finish)")
+    LENS_NAME=$(ask "Lens #$LENS_NUM name (or empty to finish)")
     [ -z "$LENS_NAME" ] && break
-    LENS_DESC=$(ask_multiline "Description for lens '$LENS_NAME'")
+    echo
+    note "Now describe lens '$LENS_NAME': your goal, active questions, what's signal vs noise."
+    LENS_DESC=$(ask_multiline "Description")
+    if [ -z "$LENS_DESC" ]; then
+        warn "Empty description — skipping this lens."
+        continue
+    fi
     LENSES_MD+="### $LENS_NAME
 
 $LENS_DESC
 "
     LENS_NUM=$((LENS_NUM + 1))
-    [ $LENS_NUM -gt 5 ] && break
+    [ $LENS_NUM -gt 5 ] && { warn "Reached maximum of 5 lenses."; break; }
 done
 
 if [ -z "$LENSES_MD" ]; then
-    warn "No lenses defined. At least one lens is required — try again."
+    warn "No lenses defined. At least one lens is required. Restart the wizard."
     exit 1
 fi
 
-echo
-echo "Stop-list — patterns of 'insight' you already know and don't want repeated."
-echo "Common examples:"
-echo "  - Generic AI-changes-everything statements"
-echo "  - Basics of RAG / fine-tuning / prompt engineering"
-echo "  - 'Distribution beats technology'"
-echo "  - AGI timeline claims"
-echo
-STOPLIST=$(ask_multiline "Paste your stop-list (one item per line)")
+clear
+
+cat <<EOF
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 2b — Stop-list (what you ALREADY know)                        │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Why this matters:
+
+    Without a stop-list, the AI will keep surfacing the same well-known
+    "insights" every day. You'll get tired of reading the same things
+    you already know — and start ignoring the digests entirely.
+
+    The stop-list explicitly tells the AI: "Don't bother me with this
+    framing — I've heard it 100 times."
+
+  Examples of items you might add:
+
+    • "AI is changing everything" — generic framings
+    • Basic RAG / fine-tuning / prompt engineering explanations
+    • "Distribution beats technology" — startup truisms
+    • Generic "how to be a great PM" advice (Lenny's-style)
+    • AGI timeline predictions
+    • Anything you've heard in 20+ podcasts already
+
+  You can leave this empty and add to it over time as you notice
+  patterns in your digest you want filtered out (edit me.md any time).
+
+  One item per line.
+
+EOF
+
+STOPLIST=$(ask_multiline "Stop-list items, empty line to finish")
 
 if [ -z "$STOPLIST" ]; then
-    STOPLIST="(none yet — add patterns over time as you notice the Synthesizer surfacing things you already know)"
+    STOPLIST="(none yet — add patterns over time as the Synthesizer surfaces things you already know)"
 fi
+
+clear
 
 # ─── Step 3: channels ────────────────────────────────────────────────────────
 
-echo
-say "Step 3 of 5 — YouTube channels to monitor"
-echo
-echo "Paste @handles, one per line. Order = priority (first = highest)."
-echo "Examples: @lexfridman, @ycombinator, @NoPriorsPodcast, @aiDotEngineer"
-echo
-HANDLES=$(ask_multiline "Channels — empty line to finish")
+cat <<EOF
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 3 of 5 — Choose channels              (~3 minutes)            │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Why channels matter:
+
+    Quality of channels = quality of digest. The AI can only filter the
+    raw signal that's already there. If you pick channels with low
+    signal density, you'll get few useful recommendations.
+
+    Pick channels that:
+      • Have practitioners (not just analysts) sharing concrete numbers
+      • Match your focus areas
+      • Post regularly (otherwise watcher mostly does nothing)
+
+  How to add:
+
+    Paste @handles, one per line. Examples:
+      @lexfridman
+      @ycombinator
+      @NoPriorsPodcast
+      @aiDotEngineer
+
+    Order = priority. If many channels post on the same day, top-of-list
+    ones get processed first (quota is 5 videos per day).
+
+    Tip: don't add too many right away. Start with 5-7 you actually
+    follow. You can always add more later (edit channels.yaml).
+
+  If you skip this step (just press empty line), the wizard uses default
+  channels: @aiDotEngineer, @sequoiacapital, @NoPriorsPodcast,
+  @ycombinator, @LennysPodcast, @lexfridman, @allin.
+
+EOF
+
+HANDLES=$(ask_multiline "Your channels, empty line to finish")
 
 if [ -z "$HANDLES" ]; then
-    warn "No channels — using defaults from channels.template.yaml."
+    note "No channels entered — using default set from channels.template.yaml"
     cp "$CHANNELS_TEMPLATE" "$CHANNELS_TARGET"
 else
-    # Build channels.yaml from handles
+    note "Building channels.yaml with your priority order..."
     {
         echo "# Generated by setup.sh. Channels listed in priority order (top = highest)."
         echo ""
@@ -185,7 +366,6 @@ else
         PRIO=1
         while IFS= read -r handle; do
             [ -z "$handle" ] && continue
-            # Normalize: ensure starts with @
             handle="${handle#@}"
             handle="@$handle"
             echo "  - handle: \"$handle\""
@@ -197,7 +377,6 @@ else
         done <<< "$HANDLES"
     } > "$CHANNELS_TARGET"
 
-    # Build initial seen.json from same handles
     {
         echo "{"
         FIRST=1
@@ -217,53 +396,164 @@ else
     } > "$REPO_DIR/seen.json"
 fi
 
+clear
+
 # ─── Step 4: secrets ─────────────────────────────────────────────────────────
 
-echo
-say "Step 4 of 5 — Secrets"
-echo
 cat <<EOF
-The wizard stores all secrets in $SECRETS_FILE
-(mode 600 — only your user can read).
 
-You'll later copy these into the claude.ai routine UI's env vars field.
-Secrets are NEVER written into the repo.
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 4 of 5 — Auth keys (the boring part)  (~3 minutes)            │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  Why we need these:
+
+    The system runs in the cloud (Anthropic's infrastructure). To work
+    on your behalf, it needs three keys:
+
+      1) Telegram bot token — to send you the daily digest
+      2) GitHub Personal Access Token — to commit results back to your repo
+      3) Anthropic API key OR OAuth token — pays for Claude AI calls
+
+    All three are stored LOCALLY here:
+      $SECRETS_FILE
+      (mode 600 — only your user can read it)
+
+    NONE of them touch the git repo. After the wizard, you'll manually
+    copy them into the claude.ai routine UI — this is the only place
+    where secrets live in the cloud.
+
+  If you DON'T have these keys yet, abort now (Ctrl+C) and follow
+  QUICKSTART.md sections:
+    • "Telegram bot setup"
+    • "GitHub token setup"
+    • "Anthropic auth"
+  Then come back and re-run setup.sh.
+
+  Have them ready? Continue.
 
 EOF
 
-mkdir -p "$SECRETS_DIR"
-chmod 700 "$SECRETS_DIR"
+pause
+echo
 
-echo "▶ Telegram bot token (from @BotFather → /newbot → API Token)"
+# ─── 4.1 Telegram ─────
+cat <<EOF
+  ▸ Telegram bot token
+
+    Where to get it:
+      1. Open Telegram → search for @BotFather
+      2. Send /newbot → give it any name and a unique handle
+      3. @BotFather replies with a token like 1234567890:AAH_xxxx...
+      4. Find your new bot in Telegram and send /start to activate it
+
+    Why we need it: this is what sends you the daily digest message.
+
+EOF
 TELEGRAM_BOT_TOKEN=$(ask_secret "Paste TELEGRAM_BOT_TOKEN")
 
 echo
-echo "▶ Telegram chat_id (from @userinfobot → /start → numeric ID, 8-10 digits)"
+cat <<EOF
+  ▸ Telegram chat ID
+
+    Where to get it:
+      1. In Telegram, search for @userinfobot
+      2. Send /start to it
+      3. It replies with your numeric ID (8-10 digits)
+
+    Why we need it: tells the bot WHICH user to send messages to. This
+    is NOT a secret — your bot only sends to this ID, no one else's.
+
+EOF
 TELEGRAM_CHAT_ID=$(ask "Paste TELEGRAM_CHAT_ID")
 
 echo
-echo "▶ GitHub fine-grained PAT (from github.com/settings/tokens?type=beta)"
-echo "  Required permissions: Contents Read+Write, Pull requests Read+Write, on this repo only."
+# ─── 4.2 GitHub PAT ─────
+cat <<EOF
+  ▸ GitHub Personal Access Token (PAT)
+
+    Where to get it:
+      1. Visit https://github.com/settings/tokens?type=beta
+      2. "Generate new token (fine-grained)"
+      3. Token name: youtube-radar-routine
+      4. Expiration: 90 days (set a reminder to rotate)
+      5. Repository access: Only select repositories → pick this repo
+      6. Repository permissions:
+           • Contents → Read and write
+           • Pull requests → Read and write
+           • Everything else → No access
+      7. Generate token, copy (shown once)
+
+    Why we need it: cloud routine pushes wiki/recommendations back to
+    your repo. We use fine-grained scope so the token can ONLY touch
+    this one repo, nothing else in your account.
+
+EOF
 GH_TOKEN=$(ask_secret "Paste GH_TOKEN")
 
 echo
-echo "▶ Anthropic auth — pick A or B:"
-echo "  A) API key from console.anthropic.com (pay-as-you-go)"
-echo "  B) OAuth setup-token from 'claude setup-token' (uses claude.ai subscription)"
+# ─── 4.3 Anthropic ─────
+cat <<EOF
+  ▸ Anthropic auth — pick one
+
+    Two ways to pay for Claude AI calls:
+
+    [A] API key — pay-as-you-go from your Anthropic API balance
+        Get it: https://console.anthropic.com/settings/keys → Create Key
+        Cost: ~\$3-5 per run of 5 videos at Sonnet prices
+        Best if: you want predictable per-call billing
+
+    [B] OAuth setup-token — uses your claude.ai subscription quota
+        Get it: open terminal, run 'claude setup-token', browser opens,
+                authorize, copy the sk-ant-oat-... token shown
+        Cost: counts against your claude.ai subscription
+        Best if: you already pay for claude.ai and have quota to spare
+
+EOF
 ANTHROPIC_CHOICE=$(ask "Choose [A/B]" "A")
 
 if [[ "$ANTHROPIC_CHOICE" =~ ^[Aa]$ ]]; then
+    echo
     ANTHROPIC_API_KEY=$(ask_secret "Paste ANTHROPIC_API_KEY (sk-ant-api03-...)")
     ANTHROPIC_TOKEN=""
 else
+    echo
     ANTHROPIC_TOKEN=$(ask_secret "Paste ANTHROPIC_TOKEN (sk-ant-oat-...)")
     ANTHROPIC_API_KEY=""
 fi
 
+clear
+
 # ─── Step 5: write files ─────────────────────────────────────────────────────
 
-echo
-say "Step 5 of 5 — Writing files"
+cat <<EOF
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Step 5 of 5 — Writing files                (~30 seconds)           │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  About to create:
+
+    • me.md
+      Your profile for the AI. Goes into the repo, committed to git.
+      You can edit it any time.
+
+    • channels.yaml
+      Your channel list with priority. Goes into the repo.
+
+    • seen.json
+      Empty tracking file (filled as videos get processed). Goes in repo.
+
+    • $SECRETS_FILE
+      Your three auth keys. Mode 600 (only your user reads it).
+      NEVER committed to git.
+
+EOF
+
+pause
+
+mkdir -p "$SECRETS_DIR"
+chmod 700 "$SECRETS_DIR"
 
 # Build me.md from template
 sed \
@@ -271,7 +561,6 @@ sed \
     -e "s|{{BACKGROUND_PARAGRAPH}}|$BACKGROUND|g" \
     "$ME_TEMPLATE" > "$ME_TARGET.tmp"
 
-# Inject lenses + stoplist via Python (sed is awkward with multiline replacements)
 python3 - <<PYEOF
 import re
 from pathlib import Path
@@ -298,42 +587,54 @@ rm -f "$ME_TARGET.tmp"
 } > "$SECRETS_FILE"
 chmod 600 "$SECRETS_FILE"
 
+echo
 ok "me.md          → $ME_TARGET"
 ok "channels.yaml  → $CHANNELS_TARGET"
 ok "seen.json      → $REPO_DIR/seen.json"
-ok "secrets.env    → $SECRETS_FILE (mode 600)"
-
-# ─── Final instructions ──────────────────────────────────────────────────────
+ok "secrets.env    → $SECRETS_FILE  (mode 600)"
 
 cat <<EOF
 
-┌─────────────────────────────────────────────────────────────────────┐
-│  Setup complete ✓                                                   │
-└─────────────────────────────────────────────────────────────────────┘
 
-Next steps:
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Setup complete ✓                                                   │
+  └─────────────────────────────────────────────────────────────────────┘
 
-  1. Review me.md and channels.yaml — edit if anything looks wrong.
+  What you have now:
 
-  2. Commit and push to GitHub:
-       git add me.md channels.yaml seen.json
-       git commit -m "initial config from setup wizard"
-       git push -u origin main
+    ✓ me.md with your profile and lenses
+    ✓ channels.yaml with your channels
+    ✓ secrets.env with your auth keys (NOT in repo)
 
-  3. Install Claude GitHub App on your repo:
-       open https://github.com/apps/claude
-     → Install → Only select repositories → youtube-radar
+  What still needs to happen (cloud setup, ~5 min):
 
-  4. Create cloud Environment on claude.ai/code:
-       Open: https://claude.ai/code
-     Follow:  .claude/setup-routine.md  Part 1
-     Env vars: copy each line from $SECRETS_FILE
+    1. Review me.md — does it capture your context accurately?
+       (cat me.md or open in any editor)
 
-  5. Create Routine on claude.ai/code/routines:
-       Follow: .claude/setup-routine.md  Part 2
+    2. Push to GitHub:
 
-  6. Run now from the routine page. First digest in ~15-20 min.
+         git add me.md channels.yaml seen.json
+         git commit -m "initial config from setup wizard"
+         gh repo create youtube-radar --private --source=. --remote=origin
+         git push -u origin main
 
-For full walkthrough see QUICKSTART.md.
+    3. Install Claude GitHub App on your new repo:
+         open https://github.com/apps/claude
+       → Install → Only select repositories → youtube-radar
+
+    4. Create cloud Environment on claude.ai/code:
+       Follow .claude/setup-routine.md, Part 1
+       Copy env vars from: $SECRETS_FILE
+
+    5. Create Routine on claude.ai/code/routines:
+       Follow .claude/setup-routine.md, Part 2
+
+    6. From the routine page click "Run now".
+       First digest in ~15-20 minutes.
+
+  Full walkthrough: QUICKSTART.md
+
+  Have a question? Open the file you're unsure about — README.md,
+  QUICKSTART.md, CONFIGURATION.md, ARCHITECTURE.md cover everything.
 
 EOF
