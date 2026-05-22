@@ -1,0 +1,62 @@
+# YouTube channels to monitor.
+#
+# Fields:
+#   handle      — @handle of the channel (case-insensitive for yt-dlp)
+#   priority    — 1..N, lower is higher priority. Used by orchestrator when total
+#                 candidates > quota (5 per run): picks in priority asc order.
+#                 Order in this file does NOT determine priority — use the field.
+#   channel_id  — UC..., 24 chars. Optional; for reference and RSS fallback.
+#   active      — false → muted (orchestrator skips in watcher loop)
+#   notes       — free text
+#
+# To add a channel:
+#   1. Get channel_id (optional):
+#      yt-dlp --print "%(channel_id)s" --playlist-items 1 "https://www.youtube.com/@<handle>/videos"
+#   2. Add an entry below with the next priority number
+#   3. Add the handle key with an empty array to seen.json
+#
+# Pre-filled with widely-followed AI / startup / tech channels as defaults.
+# Replace with your own — the more specific to your interests, the better.
+
+channels:
+  - handle: "@aiDotEngineer"
+    priority: 1
+    channel_id: "UCLKPca3kwwd-B59HNr-_lvA"
+    active: true
+    notes: "AI Engineer conference — 30-90 min technical sessions by practitioners"
+
+  - handle: "@sequoiacapital"
+    priority: 2
+    channel_id: "UCWrF0oN6unbXrWsTN7RctTw"
+    active: true
+    notes: "Sequoia — AI Ascent, portfolio interviews, market view"
+
+  - handle: "@NoPriorsPodcast"
+    priority: 3
+    channel_id: "UCSI7h9hydQ40K5MJHnCrQvw"
+    active: true
+    notes: "No Priors (Sarah Wang + Elad Gil) — AI/ML focus, high signal density"
+
+  - handle: "@ycombinator"
+    priority: 4
+    channel_id: "UCcefcZRL2oaA_uBNeo5UOWg"
+    active: true
+    notes: "YC — founder and CEO interviews, trend overviews"
+
+  - handle: "@LennysPodcast"
+    priority: 5
+    channel_id: "UC6t1O76G0jYXOAoYCm153dA"
+    active: true
+    notes: "Lenny's Podcast — PM and founder interviews"
+
+  - handle: "@lexfridman"
+    priority: 6
+    channel_id: "UCSHZKyawb77ixDdsGog4iWA"
+    active: true
+    notes: "Lex Fridman — long-form (3-5h) interviews with researchers, founders, scientists"
+
+  - handle: "@allin"
+    priority: 7
+    channel_id: "UCESLZhusAkFfsNsApnjF_Cg"
+    active: true
+    notes: "All-In — weekly commentary, lots of opinion. Useful as market sentiment radar"

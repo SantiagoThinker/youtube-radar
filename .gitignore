@@ -1,0 +1,21 @@
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Secrets — never commit
+.env
+.env.*
+*.token
+secrets/
+secrets.env
+
+# yt-dlp temp artifacts
+*.vtt
+*.ytdl
+*.part
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
