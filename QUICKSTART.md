@@ -135,16 +135,34 @@ This is the longest phase but each step is short. **Don't skip — order matters
 
 ## C1 — Install the Claude GitHub App on your repo
 
-The cloud routine needs to clone your repo and push results back.
-Anthropic's "Claude" GitHub App handles this.
+**Why this is needed** (clarifying a common confusion):
+Phase A ("Use this template") gave you ownership of a copy of the repo —
+you can edit it, push to it, control access. But the **cloud routine
+runs on Anthropic's infrastructure**, not yours. By default, Anthropic
+has zero access to your GitHub repos.
+
+The "Claude" GitHub App is the permission-grant mechanism: when you
+install it on your repo, you tell GitHub "Anthropic's cloud may clone
+this specific repo and push commits back." Without this, the routine
+can't read your `me.md` / `channels.yaml` or write wiki / recommendations.
+
+This is intentional GitHub security — apps must be installed explicitly
+per-repo; Anthropic can never auto-add itself.
+
+**Steps**:
 
 1. Open [github.com/apps/claude](https://github.com/apps/claude)
 2. Click **Install** (green button, top right)
-3. Choose your account
-4. **Repository access** → **Only select repositories** → pick `youtube-radar`
-5. Install
+   - If you've installed Claude before (e.g., for Claude Code on other
+     repos), the button says **Configure** instead — that's fine, click it
+3. Choose your account (where your `youtube-radar` repo lives)
+4. **Repository access** → **Only select repositories** → pick the repo
+   you created in Phase A (named `youtube-radar` or whatever you chose)
+5. Install / Save
 
 You should see the install confirmation page redirect back to GitHub.
+The App now has scoped access to just this one repo — nothing else
+in your account.
 
 ## C2 — Get your three secrets
 
