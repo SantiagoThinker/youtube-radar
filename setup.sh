@@ -118,12 +118,12 @@ cat <<EOF
 
   How it works:
 
-  This wizard asks 5 questions (~10 min total):
+  This wizard runs 5 steps (~10 min total):
     Step 1 — Who you are (so AI tailors content to YOU)
     Step 2 — Your focus areas (so AI knows what to look for)
     Step 3 — Which channels to watch
     Step 4 — Three quick auth keys (Telegram, GitHub, Anthropic)
-    Step 5 — Write everything to disk
+    Step 5 — Save your answers to files (no more questions)
 
   Secrets stay LOCAL ($SECRETS_FILE).
   Profile + channels go in the repo so the cloud routine can read them.
@@ -534,24 +534,37 @@ clear
 cat <<EOF
 
   ┌─────────────────────────────────────────────────────────────────────┐
-  │  Step 5 of 5 — Writing files                (~30 seconds)           │
+  │  Step 5 of 5 — Saving your answers          (~30 seconds)           │
   └─────────────────────────────────────────────────────────────────────┘
 
-  About to create:
+  What this step is:
 
-    • me.md
-      Your profile for the AI. Goes into the repo, committed to git.
-      You can edit it any time.
+    Just the wizard finishing up. No more questions. Everything you
+    entered in Steps 1-4 gets saved to the right files so the cloud
+    routine can read them later.
 
-    • channels.yaml
-      Your channel list with priority. Goes into the repo.
+  What gets created:
 
-    • seen.json
-      Empty tracking file (filled as videos get processed). Goes in repo.
+    📄 me.md
+       Your profile (name, background, lenses, stop-list). Goes into
+       this folder, will be committed to git. The AI reads this before
+       every video.
 
-    • $SECRETS_FILE
-      Your three auth keys. Mode 600 (only your user reads it).
-      NEVER committed to git.
+    📄 channels.yaml
+       Your channel list with priority. Goes into the folder, committed.
+       The watcher reads this to know what to check.
+
+    📄 seen.json
+       Tracking file (initially empty for each channel). Gets filled
+       automatically as videos are processed.
+
+    🔒 $SECRETS_FILE
+       Your three auth keys. Stored OUTSIDE this folder, with permissions
+       set so only your user can read it (mode 600). NEVER committed to
+       git, NEVER pushed anywhere. You'll later copy these into the
+       claude.ai routine UI manually.
+
+  Press Enter to write files.
 
 EOF
 
