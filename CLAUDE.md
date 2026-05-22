@@ -16,8 +16,8 @@ Pipeline: cron routine → watcher → transcript → Extractor → Synthesizer 
 | **`QUICKSTART.md`** | 15-min setup walkthrough end to end |
 | **`CONFIGURATION.md`** | Every knob: lenses, channels, language, env vars |
 | **`ARCHITECTURE.md`** | How it works under the hood — file conventions, JSONL schema, customization points |
-| **`me.md`** | User profile + lenses + stop-list. **Synthesizer reads this before every output.** Created from `me.template.md` by `setup.sh`. |
-| **`channels.yaml`** | Monitored channels with handle / priority / active / channel_id. Created from `channels.template.yaml` by `setup.sh`. |
+| **`me.md`** | User profile + lenses + stop-list. **Synthesizer reads this before every output.** Ships as a starter file with `[PLACEHOLDER]` markers — user edits directly (GitHub web or local) OR overwrites via `setup.sh`. |
+| **`channels.yaml`** | Monitored channels with handle / priority / active / channel_id. Ships with 7 default channels — user edits directly OR via `setup.sh`. |
 | **`seen.json`** | Processed video_ids per channel — **source of truth for deduplication** |
 | **`.claude/orchestrator.md`** | Full prompt of the cloud routine (runtime logic: watcher, selection, subagents, Telegram, auto-merge). Routine reads this directly (wrapper pattern). |
 | **`.claude/agents/extractor.md`** | Extractor subagent spec |

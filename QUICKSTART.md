@@ -1,73 +1,152 @@
-# Quickstart — 15 minutes to first digest
+# Quickstart — from zero to first digest
 
-End-to-end setup, from cloned repo to first Telegram digest in your chat.
+Total time: **~25-35 minutes** for the careful walkthrough. Done once,
+runs forever.
 
----
+This guide walks you through **three phases**:
 
-## Prerequisites (5 min)
+- **Phase A** — Get your own copy of youtube-radar (2 min)
+- **Phase B** — Configure your profile + lenses + channels (5-10 min)
+- **Phase C** — Wire up the cloud routine on claude.ai (15-25 min)
 
-You need accounts on:
-- **claude.ai** (Pro / Max / Team / Enterprise) with **Claude Code on the web** enabled. This is where the routine actually runs. [Sign up](https://claude.ai).
-- **GitHub** — to host the repo this routine reads/writes
-- **Telegram** — to receive digests
-- **Anthropic API key** OR **claude.ai subscription** — the routine consumes Claude usage to run agents
-
-Local tools (only for setup wizard; routine itself runs in cloud):
-- `git` — usually pre-installed
-- `gh` (GitHub CLI) — `brew install gh` on macOS
-- `yt-dlp` — `brew install yt-dlp` (optional; you can verify channels without it)
-- `python3` — usually pre-installed
+Read top to bottom. Don't skip — order matters.
 
 ---
 
-## Step 1 — Clone and configure (5 min)
+## What you'll need before starting
+
+You need accounts (free or paid) on these services:
+
+| Service | Why | Cost |
+|---|---|---|
+| GitHub | Hosts your config files | Free |
+| claude.ai (Pro/Max/Team/Enterprise) with **Claude Code on the web** enabled | Runs the routine | $20+/mo |
+| Telegram | Receives your digests | Free |
+| Anthropic API account (optional — only if you choose API-key auth) | Pays for Claude calls | Pay-as-you-go (~$3-5/run) |
+
+Local tools — only if you choose Phase B Path 2 (CLI wizard):
+- `git` (usually pre-installed)
+- `bash` 3.2+ (default on macOS / Linux)
+- `python3` (usually pre-installed)
+
+---
+
+# Phase A — Get your own copy
+
+Click **Use this template** at the top of this repo's GitHub page →
+**Create a new repository**.
+
+Suggested settings:
+- Name: `youtube-radar` (or anything you like)
+- **Private** is fine — but Public works too, just remember:
+  - Wiki and recommendations files will be public (the content of your digests)
+  - me.md is public (your profile)
+  - Secrets stay in claude.ai env-vars, NOT in repo — they're safe either way
+
+Once created, you have **your own copy** at `github.com/<you>/youtube-radar`.
+
+---
+
+# Phase B — Configure your profile, lenses, and channels
+
+You have two paths. Choose one:
+
+- **Path 1** — Edit files in GitHub web editor (no install needed) — **5-10 min**
+- **Path 2** — Clone + run `./setup.sh` interactive wizard locally — **7 min**
+
+Both paths produce the same end state: a `me.md`, `channels.yaml`, and `seen.json`
+in your repo that the cloud routine will read.
+
+## Path 1 — GitHub web (recommended, no install)
+
+### B1.1 — Open me.md in your repo's web editor
+
+Click `me.md` in the file list → click the pencil ✏️ icon → web editor opens.
+
+The file has clearly-marked `[PLACEHOLDER]` sections with inline examples
+showing what good content looks like.
+
+### B1.2 — Replace each placeholder
+
+Walk through the file top to bottom:
+
+- **Background** (3-5 sentences): your role, what you build, what you track
+- **Lenses** (1-5 sections): each lens = name + goal + active questions + signal definition
+- **Stop-list**: banalities to filter (start with 3-5 items, add more over time)
+- **Output language**: keep `en` or change to `ru` etc.
+
+Spend the most time on **lenses** — that's what filters your digest from
+generic to personally useful. Avoid broad lenses ("Technology"); use specific
+ones ("How AI-first orgs structure their PM teams").
+
+### B1.3 — Commit me.md via GitHub UI
+
+Scroll down → "Commit changes" → message "configure my profile" → Commit.
+
+### B1.4 — Now edit channels.yaml
+
+Same flow. The starter has 7 default channels (AI Engineer, Sequoia, etc.).
+
+For each channel you want:
+- Keep it (do nothing)
+- Remove it (delete the block)
+- Add new: paste a new block with the next priority number
+
+To add a channel, you need its handle (e.g., `@lexfridman`). Order = priority:
+on busy days, top-priority channels get processed first (quota is 5 per run).
+
+Commit channels.yaml.
+
+### B1.5 — Optional: trim seen.json
+
+`seen.json` should have a key for every channel in `channels.yaml`. If you
+added new channels in B1.4, also add their keys here as empty arrays:
+
+```json
+{
+  "@aiDotEngineer": [],
+  "@yourNewChannel": []
+}
+```
+
+Commit.
+
+→ **Skip to Phase C.**
+
+## Path 2 — Local CLI wizard
 
 ```bash
-git clone https://github.com/<YOUR_ORG>/youtube-radar.git
+git clone https://github.com/<you>/youtube-radar.git
 cd youtube-radar
 ./setup.sh
 ```
 
-The wizard asks:
+The wizard walks 4 steps:
+1. Your name + background paragraph
+2. Lenses (1-5, with descriptions)
+3. Channels (paste handles, one per line)
+4. Save to disk
 
-1. **Your name** — used in `me.md` for personalized prompts
-2. **Background paragraph** — 3-5 sentences about your context (role, company, what you build). The Synthesizer uses this to filter relevance.
-3. **Lenses** — pick from common ones or define custom:
-   - Career — "I'm looking for X kind of role"
-   - Startup — "I'm building Y, exploring Z"
-   - Industry radar — "I track trends in field W"
-   - Investment thesis — "I evaluate companies in space V"
-   - Skill building — "I'm learning U"
-   - Custom — your own focus
-4. **YouTube channels** — paste handles (one per line). Order = priority (most important first).
-5. **Telegram bot token** — see "Telegram bot setup" below
-6. **Telegram chat_id** — see same section
-7. **GitHub PAT** (fine-grained) — see "GitHub token setup" below
-8. **Anthropic auth** — pick API key OR OAuth setup-token (see "Anthropic auth" below)
-
-The wizard creates:
-- `me.md` from your inputs
-- `channels.yaml` with your channels + priority
-- `secrets.env` in `~/.config/youtube-radar/` (mode 600, never committed) — env vars for the routine
-
----
-
-## Step 2 — Push to your GitHub (2 min)
+It generates `me.md`, `channels.yaml`, and updates `seen.json`. Then:
 
 ```bash
-gh repo create youtube-radar --private --source=. --remote=origin
-git add .
-git commit -m "initial setup from wizard"
-git push -u origin main
+git add me.md channels.yaml seen.json
+git commit -m "initial config from setup wizard"
+git push
 ```
 
-If you already have a repo, just `git remote set-url` and push.
+→ **Continue to Phase C.**
 
 ---
 
-## Step 3 — Install Claude GitHub App on this repo (2 min)
+# Phase C — Wire up the cloud routine
 
-The routine needs to clone and push to your repo. Anthropic's "Claude" GitHub App handles this.
+This is the longest phase but each step is short. **Don't skip — order matters.**
+
+## C1 — Install the Claude GitHub App on your repo
+
+The cloud routine needs to clone your repo and push results back.
+Anthropic's "Claude" GitHub App handles this.
 
 1. Open [github.com/apps/claude](https://github.com/apps/claude)
 2. Click **Install** (green button, top right)
@@ -75,17 +154,84 @@ The routine needs to clone and push to your repo. Anthropic's "Claude" GitHub Ap
 4. **Repository access** → **Only select repositories** → pick `youtube-radar`
 5. Install
 
----
+You should see the install confirmation page redirect back to GitHub.
 
-## Step 4 — Create the cloud Environment (3 min)
+## C2 — Get your three secrets
 
-Environment holds env vars (secrets) and a setup script that runs before each routine session.
+Don't paste these into the repo or share them with anyone. You'll paste them
+into claude.ai env-vars UI in step C3.
+
+### C2.1 — Telegram bot token
+
+This is what sends you the daily digest message.
+
+1. In Telegram, search `@BotFather`
+2. Send `/newbot` → give it any name and a unique handle (e.g., `mydigestbot`)
+3. BotFather replies with a token like `1234567890:AAH_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+4. Copy and save this — you'll need it in step C3 as `TELEGRAM_BOT_TOKEN`
+5. **Important**: find your new bot in Telegram and send it `/start` to activate
+
+### C2.2 — Telegram chat ID
+
+Tells the bot which user to send messages to.
+
+1. In Telegram, search `@userinfobot`
+2. Send `/start`
+3. It replies with `Id: <numeric>` — that's your chat ID (8-10 digits)
+4. Copy and save as `TELEGRAM_CHAT_ID`
+
+### C2.3 — GitHub fine-grained PAT
+
+Lets the routine push commits to your repo (cloud git proxy redirects pushes
+to `claude/<branch>` instead of `main`; routine creates a PR and merges via
+`gh` CLI which needs this token).
+
+1. Open [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta)
+2. **Generate new token (fine-grained)**
+3. **Token name**: `youtube-radar-routine`
+4. **Expiration**: 90 days (calendar reminder to rotate)
+5. **Repository access** → **Only select repositories** → pick your `youtube-radar` repo
+6. **Repository permissions**:
+   - Contents → **Read and write**
+   - Pull requests → **Read and write**
+   - Everything else → No access
+7. Click **Generate token**
+8. Copy the token (shown once — save it!) as `GH_TOKEN`
+
+### C2.4 — Anthropic auth (pick one)
+
+Pays for Claude AI calls. Two options:
+
+**Option A — API key (recommended for predictable cost)**
+
+1. [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) → **Create Key**
+2. Copy the `sk-ant-api03-...` value
+3. Save as `ANTHROPIC_API_KEY`
+
+Pay-as-you-go from API credits. Cost: ~$3-5 per run of 5 videos at Sonnet 4.x prices.
+
+**Option B — OAuth setup-token (uses your claude.ai subscription)**
+
+1. In terminal: `claude setup-token`
+2. Browser opens → authorize → copy the `sk-ant-oat-...` token shown
+3. Save as `ANTHROPIC_TOKEN`
+
+Counts against your claude.ai subscription quota — no separate billing.
+
+## C3 — Create the cloud Environment
+
+Environment holds env vars (your secrets) and a setup script that runs before
+each routine session.
 
 1. Open [claude.ai/code](https://claude.ai/code)
 2. Click the current environment selector in the session panel
-3. **Add environment**
-4. **Name**: `youtube-radar`
-5. **Network access** → **Custom** → check **"Also include default list of common package managers"** → add to **Allowed domains**:
+3. Click **Add environment**
+4. Fill in:
+
+   **Name**: `youtube-radar`
+
+   **Network access** → select **Custom** → check **"Also include default
+   list of common package managers"** → in **Allowed domains** add (one per line):
    ```
    api.telegram.org
    youtube.com
@@ -97,29 +243,66 @@ Environment holds env vars (secrets) and a setup script that runs before each ro
    *.ytimg.com
    youtu.be
    ```
-6. **Environment variables**: open `~/.config/youtube-radar/secrets.env` from your local machine, copy each `KEY=value` line, paste into the env vars field
-7. **Setup script** (Bash):
+
+   **Why these domains**:
+   - `api.telegram.org` — sends your digest messages
+   - `youtube.com` + variants — fetches channel metadata
+   - `*.googlevideo.com` — **where VTT subtitles live** (without this the
+     pipeline can't get transcripts)
+   - `*.ytimg.com` — thumbnails (warnings without are harmless)
+
+   **Environment variables** (paste your secrets from step C2, format: `KEY=value`
+   one per line, **no quotes**):
+   ```
+   TELEGRAM_BOT_TOKEN=<your token from C2.1>
+   TELEGRAM_CHAT_ID=<your chat ID from C2.2>
+   GH_TOKEN=<your PAT from C2.3>
+   ```
+
+   Plus one of:
+   ```
+   ANTHROPIC_API_KEY=<from C2.4 option A>
+   ```
+   OR
+   ```
+   ANTHROPIC_TOKEN=<from C2.4 option B>
+   ```
+
+   ⚠️ **Anthropic doc warning**: "_env vars are visible to anyone who can
+   edit this environment_". On personal accounts this is fine. On team
+   accounts, only invite trusted collaborators.
+
+   **Setup script** (Bash):
    ```bash
    #!/bin/bash
    set -e
 
+   # Install yt-dlp via pip
    pip install yt-dlp
 
-   # Disable broken PPAs in cloud env (ppa.launchpadcontent.net returns 403)
+   # Disable broken PPAs in cloud env (ppa.launchpadcontent.net returns 403).
    sed -i.bak '/ppa\.launchpadcontent\.net/s/^deb /# deb_disabled /' /etc/apt/sources.list.d/*.list 2>/dev/null || true
 
    apt-get update || true
    apt-get install -y gh
    ```
-8. **Save**
 
----
+   **Why disable PPAs**: cloud env ships with `deadsnakes/ppa` and `ondrej/php`
+   pre-configured. Both currently return 403 Forbidden on `apt update`, exit
+   code 100, setup fails, routine doesn't start. The sed line comments them
+   out before `apt update`.
 
-## Step 5 — Create the Routine (3 min)
+5. Save the environment.
+
+## C4 — Create the Routine
 
 1. Open [claude.ai/code/routines](https://claude.ai/code/routines) → **New routine**
+
 2. **Name**: `youtube-radar-digest`
-3. **Instructions** (the prompt) — paste this thin wrapper:
+
+3. **Instructions** (the textarea): paste this **wrapper-pattern** prompt
+   exactly:
+
    ```
    You are the Orchestrator routine of youtube-radar.
 
@@ -133,94 +316,103 @@ Environment holds env vars (secrets) and a setup script that runs before each ro
    Also read README.md and CLAUDE.md for context.
 
    Required env vars (already in your environment): TELEGRAM_BOT_TOKEN,
-   TELEGRAM_CHAT_ID, GH_TOKEN.
+   TELEGRAM_CHAT_ID, GH_TOKEN, plus ANTHROPIC_API_KEY or ANTHROPIC_TOKEN.
    ```
-4. **Repositories** → select your `youtube-radar` repo
-5. **Environment** → select `youtube-radar` (created in Step 4)
-6. **Trigger** → **Schedule** → custom cron `0 6 * * *` (06:00 UTC = customize for your morning)
-7. **Permissions** tab → enable **"Allow unrestricted branch pushes"** for `youtube-radar` (note: known to silently fail in research preview — orchestrator works around it via `gh pr merge`)
-8. **Create**
+
+   **Why wrapper-pattern**: when you update logic in `.claude/orchestrator.md`
+   and push to your repo, the routine picks it up automatically on the next
+   run. If you paste the full orchestrator into Instructions, it goes stale
+   and you'd have to remember to update both file AND UI. Wrapper avoids
+   this completely.
+
+4. **Model selector** (inside prompt input): choose **Claude Sonnet 4.x**
+   (cheap + sufficient). Opus 4.7 works too but costs more.
+
+5. **Select repositories**: add your `youtube-radar` repo. Appears in the
+   list after the GitHub App is installed in step C1.
+
+6. **Select an environment**: pick `youtube-radar` (the one you created in C3).
+
+7. **Select a trigger** → choose **Schedule**:
+   - Custom cron expression: `0 6 * * *` (06:00 UTC = customize for your morning)
+   - Timezone — your local; auto-converted
+
+8. **Permissions tab** (at the bottom): enable **"Allow unrestricted branch pushes"**
+   for your repo.
+
+   ⚠️ **Known to silently fail in research preview** — routine still pushes
+   to `claude/*` despite toggle. Workaround is baked into orchestrator
+   (auto-merge via `gh` + REST API branch delete). Toggle ON anyway.
+
+9. **Connectors tab**: leave only what's actually needed. Default may include
+   Google Drive, Slack, etc. — remove them; we don't use them.
+
+10. **Create**.
+
+## C5 — Test the routine
+
+On the routine's page click **Run now**.
+
+A new session appears in the sidebar. Click into it to watch live output.
+
+Expected sequence (~15-20 min):
+1. Reads README.md, channels.yaml, seen.json
+2. Walks through all active channels sequentially (yt-dlp watcher)
+3. Finds N new videos (up to 10 per channel, quota caps at 5 per run)
+4. For each: yt-dlp transcript → Extractor subagent → Synthesizer subagent →
+   Telegram message → seen.json append
+5. End: STATUS.md regenerated, git push (which redirects to `claude/*`, then
+   auto-merged via `gh`)
+
+**What should arrive**:
+- Up to 5 Telegram messages from your bot, each with:
+  - 🧩 Root tensions from the video
+  - 💡 Most original idea
+  - 📚 Wiki · 🎯 Recommendations · ▶️ YouTube links
+- New commit on `main`: `routine YYYYMMDD-HHMM: processed N videos`
+- Files `wiki/<base>.md`, `recommendations/<base>.md` in your repo
+- Updated `STATUS.md` and entries in `logs/runs-YYYY-MM.jsonl`
 
 ---
 
-## Step 6 — Test it (1 min)
+# Troubleshooting
 
-On the routine's detail page, click **Run now**.
-
-A new session appears in your sidebar. Click into it to watch live.
-
-Expected sequence:
-1. Reads README + orchestrator.md from repo
-2. Loads channels.yaml + seen.json (initially empty)
-3. Sequential watcher across your channels — finds new videos
-4. Picks up to 5 by deterministic priority
-5. For each: yt-dlp transcript → Extractor → Synthesizer → Telegram
-6. Commits everything, auto-merges PR
-
-Total time: ~15-20 minutes for 5 videos.
-
-**You should receive Telegram messages** with the TL;DR format. If not, check `logs/runs-YYYY-MM.jsonl` and `STATUS.md` (auto-generated) on your GitHub repo's main branch.
-
----
-
-## Telegram bot setup
-
-1. Open Telegram, search `@BotFather`
-2. `/newbot` → give it a name and a unique handle (e.g., `mydigestbot`)
-3. BotFather returns the API token (format `1234567890:AAH_xxxxxxxxxx`) — this is `TELEGRAM_BOT_TOKEN`
-4. Find your bot in Telegram, send `/start` to activate it
-5. To get your `chat_id`: search `@userinfobot`, send `/start`, it replies with your numeric ID (8-10 digits)
-
-⚠️ Never paste these values into chat with AI assistants or anywhere outside `setup.sh` or the claude.ai env UI.
-
----
-
-## GitHub token setup
-
-1. [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) → **Generate new token (fine-grained)**
-2. **Token name**: `youtube-radar-routine`
-3. **Expiration**: 90 days (set a reminder to rotate)
-4. **Repository access** → **Only select repositories** → pick your `youtube-radar` repo
-5. **Repository permissions**:
-   - Contents → Read and write
-   - Pull requests → Read and write
-   - Everything else → No access
-6. Generate, copy the token (shown once)
-
-The routine uses this to merge PRs (cloud git proxy redirects pushes to `claude/<branch>` instead of `main`; routine creates a PR and merges it via `gh` CLI).
-
----
-
-## Anthropic auth
-
-Two options, pick one:
-
-### Option A: API key (recommended for predictable cost)
-
-1. [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) → **Create Key**
-2. Paste into the wizard when prompted — wizard stores in `secrets.env` as `ANTHROPIC_API_KEY`
-
-Cost: pay-as-you-go from API credits.
-
-### Option B: OAuth setup-token (uses claude.ai subscription)
-
-1. In terminal: `claude setup-token`
-2. Browser opens → authorize → copy the `sk-ant-oat-...` token shown
-3. Paste into wizard — stored as `ANTHROPIC_TOKEN`
-
-Cost: counts against your claude.ai subscription quota.
-
----
-
-## Troubleshooting
+Open the failed session (routine page → click into a past run).
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Routine starts but `setup script failed exit 100` | broken PPAs in cloud env | Use the setup script in Step 4 exactly — it disables them |
-| Watcher works, transcripts all 403 | YouTube IP-blocked Anthropic cloud subnet | Wait 1-3h; if persistent see [ARCHITECTURE.md](ARCHITECTURE.md) § known limitations |
-| Telegram silent, no error in logs | bot token invalid (revoked, typo, whitespace) | Regenerate via `@BotFather`, update env via routine UI |
-| Telegram returns `chat not found` | you haven't sent `/start` to your bot from your own account | Open the bot in Telegram, press Start |
-| PR created but not merged | `gh` PAT lacks Contents+PullRequests | Regenerate with correct scopes (Step "GitHub token setup") |
-| Routine doesn't pick up edits to `orchestrator.md` | routine Instructions cached old version | Don't paste full orchestrator into Instructions — keep it as a thin wrapper that reads `.claude/orchestrator.md` (Step 5 instructions show the wrapper) |
+| `Setup script failed exit 100` | broken PPAs not disabled before apt | Step C3, verify your setup script matches exactly |
+| `Could not clone repository` | Claude GitHub App not installed | Step C1, install on the right repo |
+| `yt-dlp: command not found` | setup script didn't run | Wait — first session rebuilds env cache (~1 min) |
+| `Host not in allowlist` | network allowlist missing a domain | Step C3, re-check Allowed domains |
+| `curl: ... api.telegram.org` blocked | Telegram domain missing | Step C3, add `api.telegram.org` to Allowed domains |
+| `refusing to push to main` | "Allow unrestricted branch pushes" off | Step C4 step 8 (note: known to silently fail; orchestrator handles via `gh pr merge` workaround) |
+| `Telegram 401` | invalid `TELEGRAM_BOT_TOKEN` | Step C2.1, regenerate via @BotFather, update env |
+| `Telegram 400 chat not found` | wrong `TELEGRAM_CHAT_ID` or you never `/start`'d the bot | Open Telegram, find your bot, press Start |
+| `Anthropic 401 invalid x-api-key` | API key revoked / wrong / whitespace | Step C2.4, regenerate at console.anthropic.com |
+| All transcripts return 403 / "Sign in to confirm bot" | YouTube IP rate-limit on Anthropic cloud | Wait 1-3 hours; if persistent, see README known limitations |
 
-See [CHANGELOG.md](CHANGELOG.md) for the full history of issues and fixes encountered during the original development.
+For specific cloud routine details see [.claude/setup-routine.md](.claude/setup-routine.md).
+
+---
+
+# What happens next
+
+After your first successful Run now:
+
+- ✅ Daily 06:00 UTC, routine fires automatically
+- ✅ For 24h-old new videos on your channels: Extractor + Synthesizer → Telegram
+- ✅ Empty days (no new videos): silent, just a watcher log entry
+- ✅ Error days: 🚨 alert in Telegram with link to STATUS.md
+
+**STATUS.md dashboard** on your repo's main branch shows: last 10 runs,
+processed count, error count, token cost, current backlog. Open it any
+time to check health.
+
+**Adjusting later**:
+- Edit `me.md` to change profile or lenses (commit + push, next run picks up)
+- Edit `channels.yaml` to add/mute channels
+- All edits via GitHub web are fine — the routine reads from your repo
+  on every run
+
+See [CONFIGURATION.md](CONFIGURATION.md) for every knob.

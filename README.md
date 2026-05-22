@@ -77,13 +77,15 @@ Subagents are context-isolated so a 1-hour transcript (~30K tokens) doesn't poll
 
 ## Quick start
 
-See [QUICKSTART.md](QUICKSTART.md) for the 15-minute setup walkthrough.
+See [QUICKSTART.md](QUICKSTART.md) for the full 25-35 min walkthrough.
 
 Big picture:
-1. Clone this repo
-2. Run `./setup.sh` — interactive wizard collects: your profile, your lenses, your channels, your secrets
-3. Configure a Claude Code cloud routine via UI (paste pre-generated values from setup)
-4. First digest arrives within 24 hours
+1. **Use this template** on GitHub → creates your own copy
+2. Edit `me.md` (profile + lenses) and `channels.yaml` (what to watch) —
+   either in GitHub web editor (no install) or via `./setup.sh` wizard locally
+3. Set up cloud routine on claude.ai with three secrets (Telegram bot,
+   GitHub PAT, Anthropic auth)
+4. Click Run now → first digest in ~15-20 min
 
 ---
 
