@@ -179,7 +179,7 @@ NAME=$(ask "Your first name")
 echo
 say "Now your background paragraph (3-5 sentences):"
 echo
-BACKGROUND=$(ask_multiline "Paste your background, empty line when done")
+BACKGROUND=$(ask_multiline "Paste your background paragraph")
 
 if [ -z "$BACKGROUND" ]; then
     warn "Background is empty. The AI will produce generic recommendations."
@@ -249,7 +249,7 @@ EOF
 
 pause
 echo
-say "Add your lenses one by one. Empty name to finish."
+say "Add your lenses one by one. Just press Enter on empty Lens name when you're done."
 
 LENSES_MD=""
 LENS_NUM=1
@@ -310,7 +310,7 @@ cat <<EOF
 
 EOF
 
-STOPLIST=$(ask_multiline "Stop-list items, empty line to finish")
+STOPLIST=$(ask_multiline "Stop-list items (one per line)")
 
 if [ -z "$STOPLIST" ]; then
     STOPLIST="(none yet — add patterns over time as the Synthesizer surfaces things you already know)"
@@ -351,13 +351,13 @@ cat <<EOF
     Tip: don't add too many right away. Start with 5-7 you actually
     follow. You can always add more later (edit channels.yaml).
 
-  If you skip this step (just press empty line), the wizard uses default
-  channels: @aiDotEngineer, @sequoiacapital, @NoPriorsPodcast,
+  If you skip this step (just type END immediately), the wizard uses
+  default channels: @aiDotEngineer, @sequoiacapital, @NoPriorsPodcast,
   @ycombinator, @LennysPodcast, @lexfridman, @allin.
 
 EOF
 
-HANDLES=$(ask_multiline "Your channels, empty line to finish")
+HANDLES=$(ask_multiline "Your channels (one @handle per line)")
 
 if [ -z "$HANDLES" ]; then
     note "No channels entered — using default set from channels.template.yaml"
