@@ -153,12 +153,13 @@ cat <<EOF
 
        Example of a useful background:
 
-         "I'm a Product Manager at a B2B SaaS company (~500 employees).
-          We're rolling out AI features and I'm evaluating whether to
-          leave for a Head-of-Product role at an early-stage AI-first
-          startup. Right now I'm tracking: how AI-first orgs structure
-          PM work, what enterprise AI buyers actually pay for, and where
-          AgentOps tooling is heading."
+         "I'm Chief Product Officer at a Series B AI-first SaaS company
+          (~150 people, $30M ARR). We ship agentic workflows for
+          enterprise customers and I'm scaling product org from 8 to 20
+          PMs over the next year. Right now I'm tracking: how to
+          structure PM teams around AI capabilities (not features), how
+          peer CPOs handle the quarterly model-shift cadence, and where
+          enterprise buyers will pay premium for outcomes vs seats."
 
        That's specific enough for the AI to decide what's relevant. A
        background like "I work in tech" is too vague to be useful.
