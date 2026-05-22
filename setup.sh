@@ -66,9 +66,11 @@ ask_multiline() {
     # often has internal blank lines, which would prematurely end input.
     local prompt="$1"
     local result=""
-    printf "${color_bold}%s${color_reset}\n" "$prompt"
-    printf "${color_dim}Type or paste your text below. When you're done, type ${color_reset}${color_bold}END${color_reset}${color_dim} on its own line and press Enter.${color_reset}\n"
-    printf "${color_dim}(blank lines inside your text are fine — they won't end input)${color_reset}\n"
+    printf "\n${color_bold}%s${color_reset}\n" "$prompt"
+    printf "${color_yellow}┌─────────────────────────────────────────────────────────────────────┐${color_reset}\n"
+    printf "${color_yellow}│${color_reset}  ${color_bold}How to finish:${color_reset} type ${color_bold}END${color_reset} on its own line, then press Enter.        ${color_yellow}│${color_reset}\n"
+    printf "${color_yellow}│${color_reset}  Blank lines inside your text are fine — they don't end input.     ${color_yellow}│${color_reset}\n"
+    printf "${color_yellow}└─────────────────────────────────────────────────────────────────────┘${color_reset}\n"
     echo
     while IFS= read -r line; do
         [ "$line" = "END" ] && break
