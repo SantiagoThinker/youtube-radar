@@ -97,21 +97,11 @@ on busy days, top-priority channels get processed first (quota is 5 per run).
 
 Commit channels.yaml.
 
-### B1.5 — Optional: trim seen.json
-
-[`seen.json`](seen.json) should have a key for every channel in [`channels.yaml`](channels.yaml). If you
-added new channels in B1.4, also add their keys here as empty arrays:
-
-```json
-{
-  "@aiDotEngineer": [],
-  "@yourNewChannel": []
-}
-```
-
-Commit.
-
 → **Skip to Phase C.**
+
+(You don't need to touch [`seen.json`](seen.json) — the routine maintains
+it automatically. It tracks processed video IDs per channel for deduplication.
+Missing or new channels are handled gracefully as empty.)
 
 ## Path 2 — Local CLI wizard
 

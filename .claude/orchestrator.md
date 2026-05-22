@@ -42,6 +42,8 @@ For each channel in channels.yaml where `active: true`, sorted by `priority` asc
 
   On success — filter out video_ids already in seen.json[<handle>]. Keep only new ones. Remember (id + title + upload_date + handle).
 
+  IMPORTANT: if seen.json doesn't have an entry for <handle> (new channel just added to channels.yaml), treat it as an empty list — all fetched video_ids are "new". After processing, append the handle key to seen.json with the processed IDs as the array. The file self-heals.
+
   Log: {"ts":"<ISO>","run_id":"$RUN_ID","agent":"watcher","channel":"<handle>","action":"check_new","status":"ok","duration_s":<N>,"notes":"found <K> new of <T> total"}
 
 If ≥3 channels fail consecutively — systemic, stop and write logs/$RUN_ID.md dump.
