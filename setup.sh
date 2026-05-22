@@ -61,19 +61,23 @@ ask() {
 }
 
 ask_multiline() {
-    # $1 = prompt. Reads until line containing exactly "END" (sentinel).
+    # $1 = prompt. Reads until line containing exactly "END" (case-insensitive).
     # Why a sentinel instead of empty-line: pasted multi-paragraph content
     # often has internal blank lines, which would prematurely end input.
     local prompt="$1"
     local result=""
+    local line_upper
     printf "\n${color_bold}%s${color_reset}\n" "$prompt"
     printf "${color_yellow}┌─────────────────────────────────────────────────────────────────────┐${color_reset}\n"
     printf "${color_yellow}│${color_reset}  ${color_bold}How to finish:${color_reset} type ${color_bold}END${color_reset} on its own line, then press Enter.        ${color_yellow}│${color_reset}\n"
+    printf "${color_yellow}│${color_reset}  Case-insensitive — 'end', 'END', 'End' all work.                  ${color_yellow}│${color_reset}\n"
     printf "${color_yellow}│${color_reset}  Blank lines inside your text are fine — they don't end input.     ${color_yellow}│${color_reset}\n"
     printf "${color_yellow}└─────────────────────────────────────────────────────────────────────┘${color_reset}\n"
     echo
     while IFS= read -r line; do
-        [ "$line" = "END" ] && break
+        # Case-insensitive END check (works in bash 3.2 on Mac)
+        line_upper=$(echo "$line" | tr '[:lower:]' '[:upper:]')
+        [ "$line_upper" = "END" ] && break
         result+="$line"$'\n'
     done
     echo "$result"
@@ -129,7 +133,7 @@ clear
 
 # ─── Step 1: profile ─────────────────────────────────────────────────────────
 
-cat <<EOF
+cat <<'EOF'
 
   ┌─────────────────────────────────────────────────────────────────────┐
   │  Step 1 of 4 — Tell us about you            (~2 minutes)            │
@@ -150,10 +154,14 @@ cat <<EOF
        Just used to personalize prompts. No surveillance.
 
     2) A short background paragraph
-       3-5 sentences. Who are you professionally, what are you building,
-       what's important RIGHT NOW. The AI uses this to filter relevance.
+       3-5 sentences. Who are YOU professionally, what are YOU building,
+       what's important to YOU right now. The AI uses this to filter
+       relevance.
 
-       Example of a useful background:
+       ⚠️  WRITE YOUR OWN — don't copy the example below. The example is
+       just to show the LEVEL of specificity that works well.
+
+       Example of a useful (but FICTIONAL) background:
 
          "I'm Chief Product Officer at a Series B AI-first SaaS company
           (~150 people, $30M ARR). We ship agentic workflows for
@@ -163,8 +171,12 @@ cat <<EOF
           peer CPOs handle the quarterly model-shift cadence, and where
           enterprise buyers will pay premium for outcomes vs seats."
 
-       That's specific enough for the AI to decide what's relevant. A
-       background like "I work in tech" is too vague to be useful.
+       Notice the example has: concrete role, company stage with numbers,
+       active project, and three specific tracking topics. THAT level of
+       specificity (about YOUR situation) is what the AI needs.
+
+       A background like "I work in tech" is too vague — the AI will
+       give you generic summaries.
 
 EOF
 
