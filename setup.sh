@@ -14,8 +14,6 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SECRETS_DIR="$HOME/.config/youtube-radar"
-SECRETS_FILE="$SECRETS_DIR/secrets.env"
 ME_TEMPLATE="$REPO_DIR/me.template.md"
 ME_TARGET="$REPO_DIR/me.md"
 CHANNELS_TEMPLATE="$REPO_DIR/channels.template.yaml"
@@ -125,7 +123,10 @@ cat <<EOF
     Step 4 — Three quick auth keys (Telegram, GitHub, Anthropic)
     Step 5 — Save your answers to files (no more questions)
 
-  Secrets stay LOCAL ($SECRETS_FILE).
+  Secrets are NEVER written to disk and NEVER committed to git.
+  They're printed on screen at the end so you can copy them straight
+  into the claude.ai routine UI. The terminal output gets cleared after.
+
   Profile + channels go in the repo so the cloud routine can read them.
 
   Press Ctrl+C any time to abort and restart.
@@ -420,13 +421,13 @@ cat <<EOF
       2) GitHub Personal Access Token — to commit results back to your repo
       3) Anthropic API key OR OAuth token — pays for Claude AI calls
 
-    All three are stored LOCALLY here:
-      $SECRETS_FILE
-      (mode 600 — only your user can read it)
+    These are NEVER saved to disk and NEVER committed to git. At the
+    end of the wizard, all three will be printed on screen in a clear
+    copy-paste block. You'll copy them straight into the claude.ai
+    routine env-vars UI, then the terminal is cleared.
 
-    NONE of them touch the git repo. After the wizard, you'll manually
-    copy them into the claude.ai routine UI — this is the only place
-    where secrets live in the cloud.
+    The claude.ai routine env-vars UI is the single place where these
+    secrets live in the cloud.
 
   If you DON'T have these keys yet, abort now (Ctrl+C) and follow
   QUICKSTART.md sections:
@@ -543,7 +544,7 @@ cat <<EOF
     entered in Steps 1-4 gets saved to the right files so the cloud
     routine can read them later.
 
-  What gets created:
+  What gets created on disk:
 
     📄 me.md
        Your profile (name, background, lenses, stop-list). Goes into
@@ -558,20 +559,17 @@ cat <<EOF
        Tracking file (initially empty for each channel). Gets filled
        automatically as videos are processed.
 
-    🔒 $SECRETS_FILE
-       Your three auth keys. Stored OUTSIDE this folder, with permissions
-       set so only your user can read it (mode 600). NEVER committed to
-       git, NEVER pushed anywhere. You'll later copy these into the
-       claude.ai routine UI manually.
+  What gets shown on screen (then cleared):
 
-  Press Enter to write files.
+    🔒 Your three auth keys, formatted for copy-paste into claude.ai
+       env-vars UI. Nothing saved to disk. After you confirm you've
+       copied them, the terminal is wiped clean.
+
+  Press Enter to continue.
 
 EOF
 
 pause
-
-mkdir -p "$SECRETS_DIR"
-chmod 700 "$SECRETS_DIR"
 
 # Build me.md from template
 sed \
@@ -591,25 +589,66 @@ PYEOF
 
 rm -f "$ME_TARGET.tmp"
 
-# Write secrets.env
-{
-    echo "# youtube-radar secrets — generated $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    echo "# Copy these into the claude.ai routine env vars UI."
-    echo "# DO NOT commit this file to git."
-    echo ""
-    echo "TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN"
-    echo "TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID"
-    echo "GH_TOKEN=$GH_TOKEN"
-    [ -n "$ANTHROPIC_API_KEY" ] && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
-    [ -n "$ANTHROPIC_TOKEN" ] && echo "ANTHROPIC_TOKEN=$ANTHROPIC_TOKEN"
-} > "$SECRETS_FILE"
-chmod 600 "$SECRETS_FILE"
-
 echo
 ok "me.md          → $ME_TARGET"
 ok "channels.yaml  → $CHANNELS_TARGET"
 ok "seen.json      → $REPO_DIR/seen.json"
-ok "secrets.env    → $SECRETS_FILE  (mode 600)"
+
+# ─── Display secrets on screen (NOT saved to disk) ───────────────────────────
+
+echo
+echo
+cat <<EOF
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  🔒 SECRETS — COPY NOW                                              │
+  │                                                                     │
+  │  Below are your three auth keys formatted for claude.ai env-vars.   │
+  │  These are NOT saved to disk and NOT committed to git.              │
+  │                                                                     │
+  │  ACTION:                                                            │
+  │   1. Open in another window: https://claude.ai/code                 │
+  │   2. Select / create environment 'youtube-radar'                    │
+  │   3. Open Environment Variables                                     │
+  │   4. Copy each line below into the env-vars field                   │
+  │   5. Save the environment                                           │
+  │   6. Come back here and press Enter — terminal will be wiped        │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+
+EOF
+
+cat <<EOF
+TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
+GH_TOKEN=$GH_TOKEN
+EOF
+
+if [ -n "$ANTHROPIC_API_KEY" ]; then
+    echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+fi
+if [ -n "$ANTHROPIC_TOKEN" ]; then
+    echo "ANTHROPIC_TOKEN=$ANTHROPIC_TOKEN"
+fi
+
+echo
+echo
+printf "${color_bold}Have you copied all values into claude.ai env-vars?${color_reset}\n"
+printf "${color_dim}(type 'yes' to clear terminal, anything else to keep visible)${color_reset}: "
+read -r COPY_CONFIRM
+
+# Clear secrets from terminal scrollback
+if [[ "$COPY_CONFIRM" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+    # printf "\033c" — reset terminal including scrollback in most modern terminals
+    # clear — fallback for terminals that don't honor the reset escape
+    printf "\033c"
+    clear
+    ok "Terminal scrollback wiped."
+else
+    warn "Terminal NOT cleared. Your secrets are still visible above."
+    warn "Recommend clearing manually before sharing screen / closing terminal."
+fi
+
+# ─── Final instructions ──────────────────────────────────────────────────────
 
 cat <<EOF
 
@@ -618,13 +657,18 @@ cat <<EOF
   │  Setup complete ✓                                                   │
   └─────────────────────────────────────────────────────────────────────┘
 
-  What you have now:
+  What you have now (in this folder):
 
     ✓ me.md with your profile and lenses
     ✓ channels.yaml with your channels
-    ✓ secrets.env with your auth keys (NOT in repo)
+    ✓ seen.json tracking file
 
-  What still needs to happen (cloud setup, ~5 min):
+  Secrets:
+
+    ✓ Copied (hopefully!) into claude.ai env-vars
+    ✓ Not on disk anywhere — wizard never wrote them down
+
+  What still needs to happen (~5 min):
 
     1. Review me.md — does it capture your context accurately?
        (cat me.md or open in any editor)
@@ -640,9 +684,10 @@ cat <<EOF
          open https://github.com/apps/claude
        → Install → Only select repositories → youtube-radar
 
-    4. Create cloud Environment on claude.ai/code:
+    4. Finish cloud Environment setup on claude.ai/code:
        Follow .claude/setup-routine.md, Part 1
-       Copy env vars from: $SECRETS_FILE
+       (You've already done env-vars — also configure Network access
+        and Setup script from that doc.)
 
     5. Create Routine on claude.ai/code/routines:
        Follow .claude/setup-routine.md, Part 2
@@ -652,7 +697,8 @@ cat <<EOF
 
   Full walkthrough: QUICKSTART.md
 
-  Have a question? Open the file you're unsure about — README.md,
-  QUICKSTART.md, CONFIGURATION.md, ARCHITECTURE.md cover everything.
+  Lost a secret? Re-run ./setup.sh — secrets are NEVER stored on disk,
+  so re-entering them is the only way. You can change anything else
+  by editing me.md / channels.yaml directly.
 
 EOF
