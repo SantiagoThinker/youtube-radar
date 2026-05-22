@@ -156,11 +156,19 @@ Edit `.claude/orchestrator.md` → "VIDEO SELECTION" section → change the cap 
 
 ---
 
-## Token cost estimate
+## Token cost estimate in STATUS.md
 
-Set in `scripts/gen_status.py` → `fmt_cost()`. Default assumes Sonnet 4.x prices ($3 input / $15 output per MTok, 60/40 split).
+`STATUS.md` displays a `Cost` column for each run. It's calculated in
+`scripts/gen_status.py` → `fmt_cost()` using Sonnet 4.x API prices ($3 input
+/ $15 output per MTok, 60/40 split).
 
-If you switch model (e.g., Haiku for cheaper, Opus for richer) — update those constants accordingly.
+**This number is only meaningful if you use `ANTHROPIC_API_KEY`** (pay-as-you-go).
+If you use `ANTHROPIC_TOKEN` (OAuth via claude.ai subscription), there's no
+per-call billing — the cost figure is informational only, indicating
+approximate API-equivalent burn.
+
+If you switch model (e.g., Haiku for cheaper, Opus for richer) — update the
+constants in `fmt_cost()` accordingly.
 
 ---
 

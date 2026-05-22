@@ -22,7 +22,7 @@ You need accounts (free or paid) on these services:
 | GitHub | Hosts your config files | Free |
 | claude.ai (Pro/Max/Team/Enterprise) with **Claude Code on the web** enabled | Runs the routine | $20+/mo |
 | Telegram | Receives your digests | Free |
-| Anthropic API account (optional — only if you choose API-key auth) | Pays for Claude calls | Pay-as-you-go (~$3-5/run) |
+| Anthropic auth: OAuth via claude.ai subscription OR API key | Pays for Claude calls | OAuth: covered by your claude.ai plan. API key: pay-as-you-go (~$3-5/run) |
 
 Local tools — only if you choose Phase B Path 2 (CLI wizard):
 - `git` (usually pre-installed)
@@ -202,21 +202,25 @@ to `claude/<branch>` instead of `main`; routine creates a PR and merges via
 
 Pays for Claude AI calls. Two options:
 
-**Option A — API key (recommended for predictable cost)**
-
-1. [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) → **Create Key**
-2. Copy the `sk-ant-api03-...` value
-3. Save as `ANTHROPIC_API_KEY`
-
-Pay-as-you-go from API credits. Cost: ~$3-5 per run of 5 videos at Sonnet 4.x prices.
-
-**Option B — OAuth setup-token (uses your claude.ai subscription)**
+**Option A — OAuth setup-token (recommended if you have claude.ai Pro/Max/Team)**
 
 1. In terminal: `claude setup-token`
 2. Browser opens → authorize → copy the `sk-ant-oat-...` token shown
 3. Save as `ANTHROPIC_TOKEN`
 
-Counts against your claude.ai subscription quota — no separate billing.
+Counts against your claude.ai subscription quota — **no per-call billing**. If
+you already pay $20/$200/etc. for claude.ai, the routine costs you nothing
+extra (within your plan's fair-use limits).
+
+**Option B — API key (pay-as-you-go from API balance)**
+
+1. [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) → **Create Key**
+2. Copy the `sk-ant-api03-...` value
+3. Save as `ANTHROPIC_API_KEY`
+
+Roughly a few dollars per run of 5 videos at Sonnet 4.x prices. Use this if
+you want a separate accounting line (e.g., business expensing) or you don't
+have a claude.ai subscription.
 
 ## C3 — Create the cloud Environment
 

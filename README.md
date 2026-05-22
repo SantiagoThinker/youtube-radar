@@ -123,7 +123,9 @@ This is built on Claude Code routines, which are **in research preview** at Anth
 - **Branch cleanup**: `gh --delete-branch` silently fails because cloud git proxy blocks ref deletion; REST API workaround is wired in.
 - **APT PPAs in cloud env**: `deadsnakes/ppa` and `ondrej/php` return 403, breaking `apt update`. Setup script disables them.
 - **Telegram is single point of failure**: video messages AND failure alerts use the same bot; if token breaks, both go silent. STATUS.md surfaces a banner as backup signal.
-- **Cost**: ~$3-5 per run with 5 videos (Sonnet 4.x prices). Budget accordingly.
+- **Cost**: depends on your Anthropic auth choice:
+  - **OAuth (claude.ai subscription)** — counts against your plan quota, no per-call billing. Recommended if you already have Claude Max / Team / Enterprise.
+  - **API key** — pay-as-you-go from your API balance. Roughly equivalent to a few dollars per run of 5 videos at Sonnet 4.x prices, depending on video length. STATUS.md shows an estimate; it's informational only and doesn't apply if you're on OAuth.
 
 See [CHANGELOG.md](CHANGELOG.md) for full history of these discoveries and workarounds.
 
