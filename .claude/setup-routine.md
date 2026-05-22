@@ -191,17 +191,16 @@ In Claude Code CLI:
 ```
 
 Pick `youtube-radar-digest`. Change cron to your preference:
-- `0 6 * * *` — daily morning (default)
-- `0 6,18 * * *` — twice a day, morning + evening
-- `0 */6 * * *` — every 6 hours (more frequent, less aggregation per digest)
+- `0 6 * * *` — daily morning (default, recommended)
+- `0 6,18 * * *` — twice a day, morning + evening (use only if you really need faster latency)
 
 If the `/schedule update` command isn't available in your Claude Code version, set it via the routine UI directly.
 
-**Why daily, not hourly**:
+**Why daily by default**:
 - Quota = 5 videos / run; daily × 5 = 35/week ≈ matches inflow (10-15/week typical)
 - Less Telegram noise (1 batch in morning vs multiple random pushes)
-- Less YouTube IP rate-limit pressure (close-together runs get 403'd)
-- Trade-off: new videos arrive within ≤24h vs ≤6h
+- **More frequent runs trigger YouTube IP rate-limit** on Anthropic's shared cloud subnet — observed in production. Sub-12h cron is not recommended.
+- Trade-off: new videos arrive within ≤24h instead of real-time. Acceptable for a digest workflow.
 
 ---
 

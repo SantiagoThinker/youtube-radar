@@ -92,14 +92,15 @@ In routine settings → Schedule trigger → cron expression:
 
 | Schedule | Effect |
 |---|---|
-| `0 6 * * *` | Daily 06:00 UTC (recommended) |
-| `0 6,18 * * *` | Twice daily — morning + evening |
-| `0 */6 * * *` | Every 6 hours — heavier on Telegram noise + YouTube rate-limit risk |
-| `0 */12 * * *` | Every 12 hours — middle ground |
+| `0 6 * * *` | Daily 06:00 UTC — **recommended default** |
+| `0 6,18 * * *` | Twice daily — morning + evening (use only if latency matters more than noise) |
+| `0 */12 * * *` | Every 12 hours — middle ground; still safe against YouTube rate-limits |
+
+**Avoid more frequent than 12h.** Sub-12h cron triggers YouTube IP rate-limits on Anthropic's shared cloud subnet (observed in production — `Sign in to confirm you're not a bot` 403 on transcript downloads). The system can't recover from this state automatically until the IP cools down (1-3+ hours).
 
 Trade-offs:
 - **Daily**: most aggregation per digest, lowest noise, ≤24h latency on new content
-- **More frequent**: faster delivery but more empty runs and YouTube IP rate-limit risk
+- **Twice daily / 12h**: faster delivery but more empty runs
 
 Anthropic minimum interval is 1 hour.
 
