@@ -20,9 +20,8 @@ You need accounts (free or paid) on these services:
 | Service | Why | Cost |
 |---|---|---|
 | GitHub | Hosts your config files | Free |
-| claude.ai (Pro/Max/Team/Enterprise) with **Claude Code on the web** enabled | Runs the routine | $20+/mo |
+| claude.ai (Pro/Max/Team/Enterprise) with **Claude Code on the web** enabled | Runs the routine — uses your subscription quota for all Claude calls | $20+/mo |
 | Telegram | Receives your digests | Free |
-| Anthropic auth: OAuth via claude.ai subscription OR API key | Pays for Claude calls | OAuth: covered by your claude.ai plan. API key: pay-as-you-go (~$3-5/run) |
 
 Local tools — only if you choose Phase B Path 2 (CLI wizard):
 - `git` (usually pre-installed)
@@ -164,10 +163,15 @@ You should see the install confirmation page redirect back to GitHub.
 The App now has scoped access to just this one repo — nothing else
 in your account.
 
-## C2 — Get your three secrets
+## C2 — Get your two secrets
 
 Don't paste these into the repo or share them with anyone. You'll paste them
 into claude.ai env-vars UI in step C3.
+
+Note: you do **not** need a separate Anthropic API key or OAuth token. The
+routine runs on your claude.ai subscription — Claude calls (orchestrator
+itself, Extractor and Synthesizer subagents) consume your plan quota
+automatically. No extra auth needed.
 
 ### C2.1 — Telegram bot token
 
@@ -205,30 +209,6 @@ to `claude/<branch>` instead of `main`; routine creates a PR and merges via
    - Everything else → No access
 7. Click **Generate token**
 8. Copy the token (shown once — save it!) as `GH_TOKEN`
-
-### C2.4 — Anthropic auth (pick one)
-
-Pays for Claude AI calls. Two options:
-
-**Option A — OAuth setup-token (recommended if you have claude.ai Pro/Max/Team)**
-
-1. In terminal: `claude setup-token`
-2. Browser opens → authorize → copy the `sk-ant-oat-...` token shown
-3. Save as `ANTHROPIC_TOKEN`
-
-Counts against your claude.ai subscription quota — **no per-call billing**. If
-you already pay $20/$200/etc. for claude.ai, the routine costs you nothing
-extra (within your plan's fair-use limits).
-
-**Option B — API key (pay-as-you-go from API balance)**
-
-1. [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) → **Create Key**
-2. Copy the `sk-ant-api03-...` value
-3. Save as `ANTHROPIC_API_KEY`
-
-Roughly a few dollars per run of 5 videos at Sonnet 4.x prices. Use this if
-you want a separate accounting line (e.g., business expensing) or you don't
-have a claude.ai subscription.
 
 ## C3 — Create the cloud Environment
 
@@ -269,15 +249,6 @@ each routine session.
    TELEGRAM_BOT_TOKEN=<your token from C2.1>
    TELEGRAM_CHAT_ID=<your chat ID from C2.2>
    GH_TOKEN=<your PAT from C2.3>
-   ```
-
-   Plus one of:
-   ```
-   ANTHROPIC_API_KEY=<from C2.4 option A>
-   ```
-   OR
-   ```
-   ANTHROPIC_TOKEN=<from C2.4 option B>
    ```
 
    ⚠️ **Anthropic doc warning**: "_env vars are visible to anyone who can
@@ -328,7 +299,8 @@ each routine session.
    Also read README.md and CLAUDE.md for context.
 
    Required env vars (already in your environment): TELEGRAM_BOT_TOKEN,
-   TELEGRAM_CHAT_ID, GH_TOKEN, plus ANTHROPIC_API_KEY or ANTHROPIC_TOKEN.
+   TELEGRAM_CHAT_ID, GH_TOKEN. Claude calls use the routine's own
+   claude.ai subscription session — no separate Anthropic token needed.
    ```
 
    **Why wrapper-pattern**: when you update logic in `.claude/orchestrator.md`

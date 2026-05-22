@@ -61,9 +61,8 @@ If any prerequisite is missing, see [QUICKSTART.md](../QUICKSTART.md) sections a
    TELEGRAM_BOT_TOKEN=<your fresh token from BotFather>
    TELEGRAM_CHAT_ID=<your numeric chat_id from @userinfobot>
    GH_TOKEN=<your fine-grained PAT>
-   ANTHROPIC_API_KEY=<your API key from console.anthropic.com>
    ```
-   (If using OAuth instead, use `ANTHROPIC_TOKEN=<sk-ant-oat-...>` and leave `ANTHROPIC_API_KEY` unset.)
+   (No Anthropic token needed — the routine uses your claude.ai subscription session for all Claude calls, including Extractor and Synthesizer subagents.)
 
    **GH_TOKEN — how to get a fine-grained PAT** (needed for auto-merge):
    1. [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) → **Generate new token (fine-grained)**

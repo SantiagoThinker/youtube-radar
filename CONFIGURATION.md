@@ -79,10 +79,8 @@ Configured in claude.ai/code → Environment → Environment variables.
 | `TELEGRAM_BOT_TOKEN` | yes | Bot token from @BotFather |
 | `TELEGRAM_CHAT_ID` | yes | Your numeric Telegram ID |
 | `GH_TOKEN` | yes | Fine-grained PAT (Contents+PullRequests on this repo) |
-| `ANTHROPIC_API_KEY` | one of two | API key from console.anthropic.com (pay-as-you-go) |
-| `ANTHROPIC_TOKEN` | one of two | OAuth setup-token (uses claude.ai subscription) |
 
-Pick ONE of API_KEY or TOKEN, not both. API_KEY is more predictable cost; TOKEN saves you on free tier if you already pay for claude.ai.
+No separate Anthropic auth needed. The routine session itself runs on your claude.ai subscription and consumes that plan's quota for all Claude calls (orchestrator decisions, Extractor, Synthesizer subagents).
 
 ---
 
@@ -162,10 +160,10 @@ Edit `.claude/orchestrator.md` → "VIDEO SELECTION" section → change the cap 
 `scripts/gen_status.py` → `fmt_cost()` using Sonnet 4.x API prices ($3 input
 / $15 output per MTok, 60/40 split).
 
-**This number is only meaningful if you use `ANTHROPIC_API_KEY`** (pay-as-you-go).
-If you use `ANTHROPIC_TOKEN` (OAuth via claude.ai subscription), there's no
-per-call billing — the cost figure is informational only, indicating
-approximate API-equivalent burn.
+**The figure is informational only** — your routine runs on your claude.ai
+subscription, so there's no per-call billing. The cost number is the
+**API-equivalent burn** of your subscription quota, useful for understanding
+usage intensity and comparing runs.
 
 If you switch model (e.g., Haiku for cheaper, Opus for richer) — update the
 constants in `fmt_cost()` accordingly.

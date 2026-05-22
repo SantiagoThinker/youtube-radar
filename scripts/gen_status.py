@@ -122,10 +122,10 @@ def fmt_cost(tokens):
     """Rough cost estimate at Claude Sonnet 4.x API prices ($3/MTok in, $15/MTok out).
     Assume 60/40 in/out split. Returns dollars rounded to 2 decimals.
 
-    Note: this estimate is only meaningful if the user is on the ANTHROPIC_API_KEY
-    (pay-as-you-go) path. On the ANTHROPIC_TOKEN (claude.ai subscription) path,
-    there's no per-call billing — the figure is purely informational
-    (approximate API-equivalent burn against subscription quota).
+    The routine runs on the user's claude.ai subscription — there's no
+    per-call billing. This figure is purely informational: an
+    API-equivalent burn estimate for understanding usage intensity and
+    comparing runs over time.
     """
     if tokens == 0:
         return "—"

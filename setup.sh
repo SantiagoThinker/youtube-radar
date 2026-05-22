@@ -594,10 +594,14 @@ cat <<EOF
 
   ───────────────────────────────────────────────────────────────────────
 
-  ❹ Get your three secrets
+  ❹ Get your two secrets
 
      You'll paste these into the claude.ai env-vars UI in Step ❺.
      KEEP THEM in your password manager — never in repo, never in chat.
+
+     Note: Claude calls (routine itself + Extractor/Synthesizer subagents)
+     use your claude.ai subscription session automatically. No separate
+     Anthropic token is needed.
 
      ─── A) Telegram bot token ───
        1. Open Telegram, search @BotFather
@@ -620,14 +624,6 @@ cat <<EOF
             - Pull requests → Read and write
             - everything else → No access
        6. Generate, copy (shown once)
-
-     ─── D) Anthropic auth — pick one ───
-       [Option A] API key (predictable per-call cost):
-          Open https://console.anthropic.com/settings/keys → Create Key
-          Copy the sk-ant-api03-... value
-       [Option B] OAuth setup-token (uses claude.ai subscription quota):
-          In terminal: claude setup-token
-          Authorize in browser, copy the sk-ant-oat-... shown
 
   ───────────────────────────────────────────────────────────────────────
 
@@ -655,9 +651,6 @@ cat <<EOF
           TELEGRAM_BOT_TOKEN=<from A>
           TELEGRAM_CHAT_ID=<from B>
           GH_TOKEN=<from C>
-          ANTHROPIC_API_KEY=<from D, option A>
-          OR
-          ANTHROPIC_TOKEN=<from D, option B>
      5. Setup script (Bash):
           #!/bin/bash
           set -e

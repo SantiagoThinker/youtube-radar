@@ -8,7 +8,8 @@ Env vars (configured in routine UI, not in repo):
 - `TELEGRAM_BOT_TOKEN` — bot token from @BotFather
 - `TELEGRAM_CHAT_ID` — your personal Telegram chat ID
 - `GH_TOKEN` — fine-grained PAT with Contents+PullRequests on this repo (for auto-merge)
-- `ANTHROPIC_API_KEY` (optional) — only if you chose API key path; OAuth path uses claude.ai subscription
+
+Claude calls (orchestrator itself + Extractor/Synthesizer subagents) use the routine's claude.ai subscription session automatically. No separate Anthropic token needed.
 
 ---
 
@@ -187,7 +188,7 @@ GLOBAL RULES:
 
 - Log entries for extractor+synthesizer ALWAYS include tokens_in/tokens_out and notes-field with BASE filename for traceability.
 - Quota: max 5 videos per run.
-- NEVER write TELEGRAM_BOT_TOKEN, GH_TOKEN, ANTHROPIC_API_KEY anywhere in repo/logs/commits.
+- NEVER write TELEGRAM_BOT_TOKEN or GH_TOKEN anywhere in repo/logs/commits.
 - NEVER invent facts in subagent outputs — that's their domain and they self-police, but you as orchestrator don't add anything to their outputs.
 - seen.json contains ONLY video_ids that completed end-to-end (wiki + recommendations + Telegram).
 - Filenames built ONLY via `build_base` from utils.sh — never manual concatenation.
